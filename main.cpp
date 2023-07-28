@@ -1,43 +1,33 @@
+#include <iostream>
+#include <set>
+#include "randomGenerator.cpp"
+#include "Event.hpp"
 
-#include<iostream>
-#include"randomGenerator.cpp"
-#include"currentComparison.cpp"
-#include"bitsetPOC.cpp"
 
+std::int32_t main(int argc, char** argv) {
 
-std::int32_t main(int argc, char** argv){
-    int numIterations = atoi(argv[1]);
-
+    if (argc != 2) {
+        std::cout << "Pass number of iterations to run" << std::endl;
+        exit(0);
+    }
+    auto numIterations = atoi(argv[1]);
     RandomGenerator randomGenerator;
-    std::uint64_t sendTime ,receiveTime;
-    std::string sendName, receiveName;
-    std::uint8_t generation;
-    while(numIterations--){
-    sendTime = randomGenerator.generateRandomLongLongInt();
-    receiveTime = randomGenerator.generateRandomLongLongInt();
-    sendName = randomGenerator.generateRandomString();
-    receiveName = randomGenerator.generateRandomString();
-    generation = randomGenerator.generateRandomUint8();
+    std::uint64_t sendTime = 0, receiveTime = 0;
+    std::uint8_t sendName = 0, receiveName = 0, generation = 0;
+    bool eventType = false;
 
-    Event event1(sendTime, receiveTime, sendName, receiveName, generation);
-    Event2 eventA(sendTime, receiveTime, sendName, receiveName, generation);
+    std::multiset<struct Event, compareEvents>  older;
+    std::multiset<struct Event, compareEvents2> newer;
 
-    sendTime = randomGenerator.generateRandomLongLongInt();
-    receiveTime = randomGenerator.generateRandomLongLongInt();
-    sendName = randomGenerator.generateRandomString();
-    receiveName = randomGenerator.generateRandomString();
-    generation = randomGenerator.generateRandomUint8();
+    while (numIterations--) {
+        sendTime    = randomGenerator.generateRandomLongLongInt();
+        receiveTime = randomGenerator.generateRandomLongLongInt();
+        sendName    = randomGenerator.generateRandomUint8();
+        receiveName = randomGenerator.generateRandomUint8();
+        generation  = randomGenerator.generateRandomUint8();
+        eventType   = randomGenerator.generateRandomUint8() % 2;
 
-    Event event2(sendTime, receiveTime, sendName, receiveName, generation);
-    Event2 eventB(sendTime, receiveTime, sendName, receiveName, generation);
-    
-
-    if(compareEvents(event1, event2) != compareEvents2(eventA, eventB)){
-        std::cout<<"False"<<std::endl;
-        break;
+        older.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
+        newer.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
     }
-    
-
-    }
-
 }
