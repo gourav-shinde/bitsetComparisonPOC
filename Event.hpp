@@ -3,15 +3,29 @@
 #include <limits>
 #include <string>
 
-template< std::size_t N1, std::size_t N2 >
-std::bitset<N1+N2> operator+(const std::bitset<N1>& a, const std::bitset<N2>& b ) {
-    return std::bitset<N1+N2>(a.to_string() + b.to_string());
+template<std::size_t N1,std::size_t N2>
+std::bitset<N1+N2> operator +( 
+                            const std::bitset<N1>& a,
+                            const std::bitset<N2>& b
+                            )
+{
+    std::bitset<N1+N2> res;
+    for(size_t i=0;i<N1;++i)
+        res.set(i, a[i]);
+
+    for(size_t i=N1;i<N2;++i)
+        res.set(i, b[i]);
+
+    return res;
 }
 
 template<std::size_t N>
 bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
-    for (int i = N-1; i >= 0; i--) {
-        if (x[i] ^ y[i]) return y[i];
+    size_t a{0},b{0};
+    while(a!=N && b!=N){
+        if((a=x._Find_next(a))<(b=y._Find_next(b))){
+            return true;
+        }
     }
     return false;
 }
