@@ -2,6 +2,7 @@
 #include <set>
 #include "randomGenerator.cpp"
 #include "Event.hpp"
+#include "Event2.hpp"
 
 
 std::int32_t main(int argc, char** argv) {
@@ -16,8 +17,8 @@ std::int32_t main(int argc, char** argv) {
     std::uint8_t sendName = 0, receiveName = 0, generation = 0;
     bool eventType = false;
 
-    std::multiset<struct Event, compareEvents>  older;
-    std::multiset<struct Event, compareEvents2> newer;
+    std::multiset<struct Event, compareEvents>  newer;
+    std::multiset<struct Event2, compareEvent2> older;
 
     while (numIterations--) {
         sendTime    = randomGenerator.generateRandomLongLongInt();

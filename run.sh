@@ -1,0 +1,1 @@
+./build/bitsets $1

@@ -46,34 +46,9 @@ struct Event {
     }
 };
 
-// compare two events
-struct compareEvents {
-public:
-    bool operator() (const Event& lhs, const Event& rhs) const {
-        if(lhs.receiveTime_ < rhs.receiveTime_) {
-            return true;
-        } else if (lhs.receiveTime_ == rhs.receiveTime_) {
-            if (lhs.sendTime_ < rhs.sendTime_) {
-                return true;
-            } else if (lhs.sendTime_ == rhs.sendTime_) {
-                if (lhs.receiveName_ < rhs.receiveName_) {
-                    return true;
-                } else if (lhs.receiveName_ == rhs.receiveName_) {
-                    if(lhs.sendName_ < rhs.sendName_) {
-                        return true;
-                    } else if(lhs.sendName_ != rhs.sendName_) {
-                        if(lhs.generation_ < rhs.generation_) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-};
 
-struct compareEvents2 {
+
+struct compareEvents {
 public:
     bool operator() (const Event& lhs, const Event& rhs) const {
         return lhs.mask_ < rhs.mask_;
