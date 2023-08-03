@@ -24,10 +24,10 @@ bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
     size_t a{0},b{0};
     while(a!=N && b!=N){
         if((a=x._Find_next(a))<(b=y._Find_next(b))){
-            return true;
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 struct Event {
