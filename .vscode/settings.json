@@ -51,6 +51,7 @@
         "complex": "cpp",
         "iomanip": "cpp",
         "sstream": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "set": "cpp"
     }
 }

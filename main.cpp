@@ -3,6 +3,7 @@
 #include "randomGenerator.cpp"
 #include "Event.hpp"
 #include "Event2.hpp"
+#include "Event3.hpp"
 
 
 std::int32_t main(int argc, char** argv) {
@@ -19,6 +20,7 @@ std::int32_t main(int argc, char** argv) {
 
     std::multiset<struct Event, compareEvents>  newer;
     std::multiset<struct Event2, compareEvent2> older;
+    std::multiset<struct Event3, compareEvent3> tertiary;
 
     while (numIterations--) {
         sendTime    = randomGenerator.generateRandomLongLongInt();
@@ -30,5 +32,6 @@ std::int32_t main(int argc, char** argv) {
 
         older.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
         newer.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
+        tertiary.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
     }
 }
