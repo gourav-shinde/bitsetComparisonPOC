@@ -3,34 +3,16 @@
 #include <limits>
 #include <string>
 
-// template<std::size_t N1,std::size_t N2>
-// std::bitset<N1+N2> operator +( 
-//                             const std::bitset<N1>& a,
-//                             const std::bitset<N2>& b
-//                             )
-// {
-//     std::bitset<N1+N2> res;
-//     for(size_t i=0;i<N1;++i)
-//         res.set(i, a[i]);
-
-//     for(size_t i=N1;i<N2;++i)
-//         res.set(i, b[i]);
-
-//     return res;
-// }
-
-template<std::size_t N1,std::size_t N2>
-std::bitset<N1+N2> operator +( 
-                            const std::bitset<N1>& a,
-                            const std::bitset<N2>& b
-                            )
-{
-    std::bitset<N1+N2> res;
-    res=res|std::bitset<N1+N2>(a.to_ullong());
-    res=res<<N2;
-    res=res|std::bitset<N1+N2>(b.to_ullong());
-    return res;
+template<std::size_t N1, std::size_t N2>
+std::bitset<N1+N2> operator +(std::bitset<N1> lhs, std::bitset<N2> rhs){
+    std::bitset<N1+N2> temp;
+    for(int i=0;i<N2;++i)
+        temp[i]=rhs.test(i);
+    for(int i=0;i<N1;++i)
+        temp[i+N2]=lhs.test(i);
+    return temp;
 }
+
 
 template<std::size_t N>
 bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
