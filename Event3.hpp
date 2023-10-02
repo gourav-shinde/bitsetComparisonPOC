@@ -6,16 +6,16 @@
 struct Event3 {
     std::uint64_t    receiveTime_;
     std::uint64_t    sendTime_;
-    std::uint8_t     sendName_;
-    std::uint8_t     receiveName_;
+    std::string      sendName_;
+    std::string      receiveName_;
     std::uint8_t     generation_;
     bool             Event2Type_;
 
 
     Event3(std::uint64_t sendTime,
           std::uint64_t receiveTime,
-          std::uint8_t  sendName,
-          std::uint8_t  receiveName,
+          std::string  sendName,
+          std::string  receiveName,
           std::uint8_t  generation,
           bool          Event2Type) :
               sendTime_(sendTime),
@@ -46,3 +46,38 @@ public:
     }
 
 };
+
+bool strict_compare(const Event3& first,
+                     const Event3& second){
+                      return (first.receiveTime_ != second.receiveTime_) ? false :
+                  ((first.sendTime_ < second.sendTime_) ? true :
+                  ((first.sendTime_ != second.sendTime_) ? false :
+                    ((first.sendName_ < second.sendName_) ? true :
+                    ((first.sendName_ != second.sendName_) ? false :
+                      ((first.generation_ < second.generation_) ? true :
+                      ((first.generation_ != second.generation_) ? false :
+                        ((first.Event2Type_ < second.Event2Type_) ? true :
+                        ((first.Event2Type_ != second.Event2Type_) ? false : false))))))));
+}
+
+struct compareEventrelax {
+public:
+    bool operator() (const Event3& first,
+                     const Event3& second) const {
+        return  (first.receiveTime_ < second.receiveTime_) ? true : strict_compare(first,second);
+    }
+
+};
+
+
+struct compareEventshort {
+public:
+    bool operator() (const Event3& first,
+                     const Event3& second) const {
+        return  (first.receiveTime_ < second.receiveTime_) ? true : false;
+    }
+
+};
+
+
+ 

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <set>
 #include "randomGenerator.cpp"
-#include "Event.hpp"
-#include "Event2.hpp"
+// #include "Event.hpp"
+// #include "Event2.hpp"
 #include "Event3.hpp"
 
 
@@ -15,23 +15,24 @@ std::int32_t main(int argc, char** argv) {
     auto numIterations = atoi(argv[1]);
     RandomGenerator randomGenerator;
     std::uint64_t sendTime = 0, receiveTime = 0;
-    std::uint8_t sendName = 0, receiveName = 0, generation = 0;
+    std::string sendName = "", receiveName = ""; 
+    std::uint8_t generation = 0;
     bool eventType = false;
 
-    std::multiset<struct Event, compareEvents>  newer;
-    std::multiset<struct Event2, compareEvent2> older;
+    // std::multiset<struct Event, compareEvents>  newer;
+    // std::multiset<struct Event2, compareEvent2> older;
     std::multiset<struct Event3, compareEvent3> tertiary;
 
     while (numIterations--) {
-        sendTime    = randomGenerator.generateRandomLongLongInt();
-        receiveTime = randomGenerator.generateRandomLongLongInt();
-        sendName    = randomGenerator.generateRandomUint8();
-        receiveName = randomGenerator.generateRandomUint8();
+        sendTime    = 2002;
+        receiveTime = 3000;
+        sendName    = "sdfasfsa";
+        receiveName = "sdfsdfas";
         generation  = randomGenerator.generateRandomUint8();
         eventType   = randomGenerator.generateRandomUint8() % 2;
 
-        older.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
-        newer.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
+        // older.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
+        // newer.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
         tertiary.emplace(sendTime, receiveTime, sendName, receiveName, generation, eventType);
     }
 }

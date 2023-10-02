@@ -18,24 +18,24 @@ std::bitset<N1+N2> operator+(const std::bitset<N1>& a, const std::bitset<N2>& b 
     return std::bitset<N1+N2>(a.to_string() + b.to_string());
 }
 
-template<std::size_t N>
-bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
-    size_t a{0},b{0};
-    while(a!=N && b!=N){
-        if((a=x._Find_next(a))<(b=y._Find_next(b))){
-            return false;
-        }
-    }
-    return true;
-}
-
 // template<std::size_t N>
 // bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
-//     for (int i = N-1; i >= 0; i--) {
-//         if (x[i] ^ y[i]) return y[i];
+//     size_t a{0},b{0};
+//     while(a!=N && b!=N){
+//         if((a=x._Find_next(a))<(b=y._Find_next(b))){
+//             return false;
+//         }
 //     }
-//     return false;
+//     return true;
 // }
+
+template<std::size_t N>
+bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
+    for (int i = N-1; i >= 0; i--) {
+        if (x[i] ^ y[i]) return y[i];
+    }
+    return false;
+}
 
 int main(){
     std::bitset<64> a(5);
