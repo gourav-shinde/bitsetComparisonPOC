@@ -45,7 +45,7 @@ void do_something(int numIterations,const Event3 &A,const Event3 &B){
     elapsed_seconds = end - start;
     end_time = std::chrono::system_clock::to_time_t(end);
  
-    std::cout<< "elapsed time short(wrong compare logic) compare events: " << elapsed_seconds.count() << "s\n";
+    std::cout<< "elapsed time short(simple compare logic) compare events: " << elapsed_seconds.count() << "s\n";
 }
 
 std::int32_t main(int argc, char** argv) {
@@ -58,12 +58,12 @@ std::int32_t main(int argc, char** argv) {
     }
     auto numIterations = atoi(argv[1]);
     Event3 A(223372036854775808,223372036854775500,"Chicago","Cincinnati",1,true);
-    Event3 B(22337203685477580,2233720368547600,"Chicago","Columbus",1,true);
+    Event3 B(223372036854775800,223372036854775400,"Chicago","Columbus",1,true);
     Event3 C(223372036854775808,223372036854775500,"Chicago","Cincinnati",1,false);
 
     // A>B 
-    std::cout<<"A>B\n";
-    do_something(numIterations,A,B);
+    std::cout<<"A<B\n";
+    do_something(numIterations,B,A);
 
     // A==B
     std::cout<<"A==B\n";

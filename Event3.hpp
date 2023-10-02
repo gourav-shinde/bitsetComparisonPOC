@@ -74,7 +74,7 @@ struct compareEventshort {
 public:
     bool operator() (const Event3& first,
                      const Event3& second) const {
-        return  (first.receiveTime_ < second.receiveTime_) ? true : false;
+        return  (first.receiveTime_ < second.receiveTime_);
     }
 
 };
