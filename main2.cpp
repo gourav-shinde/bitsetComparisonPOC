@@ -12,6 +12,7 @@ void do_something(int numIterations,const Event3 &A,const Event3 &B){
     compareEvent3 normal;
     compareEventrelax relax;
     compareEventshort shortvar;
+    compareEventThreeway threewayOperator;
     long tempp=numIterations;
     start = std::chrono::system_clock::now();
     while (--tempp) {
@@ -46,6 +47,31 @@ void do_something(int numIterations,const Event3 &A,const Event3 &B){
     end_time = std::chrono::system_clock::to_time_t(end);
  
     std::cout<< "elapsed time short(simple compare logic) compare events: " << elapsed_seconds.count() << "s\n";
+
+    tempp=numIterations;
+    start = std::chrono::system_clock::now();
+    while (--tempp) {
+        A<B;
+    }
+    end = std::chrono::system_clock::now();
+
+    elapsed_seconds = end - start;
+    end_time = std::chrono::system_clock::to_time_t(end);
+ 
+    std::cout<< "elapsed time short(three way) compare events: " << elapsed_seconds.count() << "s\n";
+
+        tempp=numIterations;
+    start = std::chrono::system_clock::now();
+    while (--tempp) {
+        threewayOperator(A,B);
+    }
+    end = std::chrono::system_clock::now();
+
+    elapsed_seconds = end - start;
+    end_time = std::chrono::system_clock::to_time_t(end);
+ 
+    std::cout<< "elapsed time struct(three way) compare events: " << elapsed_seconds.count() << "s\n";
+
 }
 
 std::int32_t main(int argc, char** argv) {
@@ -61,11 +87,16 @@ std::int32_t main(int argc, char** argv) {
     Event3 B(223372036854775800,223372036854775400,"Chicago","Columbus",1,true);
     Event3 C(223372036854775808,223372036854775500,"Chicago","Cincinnati",1,false);
 
-    // A>B 
-    std::cout<<"A<B\n";
+    // A<B 
+    std::cout<<"A<B\n"<<__cplusplus<<std::endl;
     do_something(numIterations,B,A);
+
+    // A>B 
+    std::cout<<"A>B\n";
+    do_something(numIterations,A,B);
 
     // A==B
     std::cout<<"A==B\n";
     do_something(numIterations,A,C);
+    
 }

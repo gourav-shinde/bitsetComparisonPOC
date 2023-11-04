@@ -1,6 +1,7 @@
 #include <bitset>
 #include <type_traits>
 #include <limits>
+#include <compare>
 #include <string>
 
 // template<std::size_t N1, std::size_t N2>
@@ -33,14 +34,14 @@ bool operator<(const std::bitset<N>& x, const std::bitset<N>& y) {
 }
 
 struct Event {
+    std::bitset<153> mask_;
     std::uint64_t    receiveTime_;
     std::uint64_t    sendTime_;
     std::uint8_t     sendName_;
     std::uint8_t     receiveName_;
     std::uint8_t     generation_;
     bool             eventType_;
-    std::bitset<153> mask_;
-
+    auto operator<=>(const Event&) const = default;
     Event(std::uint64_t sendTime,
           std::uint64_t receiveTime,
           std::uint8_t  sendName,
@@ -67,6 +68,6 @@ struct Event {
 struct compareEvents {
 public:
     bool operator() (const Event& lhs, const Event& rhs) const {
-        return lhs.mask_ < rhs.mask_;
+        return lhs < rhs;
     }
 };

@@ -1,16 +1,18 @@
 #include <type_traits>
 #include <limits>
+#include <compare>
 #include <string>
 
 
 struct Event3 {
     std::uint64_t    receiveTime_;
-    std::uint64_t    sendTime_;
-    std::string      sendName_;
     std::string      receiveName_;
+    std::string      sendName_;
     std::uint8_t     generation_;
     bool             Event2Type_;
+    std::uint64_t    sendTime_;
 
+    auto operator<=>(const Event3&) const = default;
 
     Event3(std::uint64_t sendTime,
           std::uint64_t receiveTime,
@@ -75,6 +77,15 @@ public:
     bool operator() (const Event3& first,
                      const Event3& second) const {
         return  (first.receiveTime_ < second.receiveTime_);
+    }
+
+};
+
+struct compareEventThreeway {
+public:
+    bool operator() (const Event3& first,
+                     const Event3& second) const {
+        return  (first <=> second)<0;
     }
 
 };

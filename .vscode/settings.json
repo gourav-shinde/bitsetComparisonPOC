@@ -52,6 +52,9 @@
         "iomanip": "cpp",
         "sstream": "cpp",
         "cfenv": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp",
+        "map": "cpp"
     }
 }
