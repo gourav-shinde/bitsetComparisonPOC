@@ -1,6 +1,7 @@
 #include <iostream>
 #include <atomic>
 #include <vector>
+#include <cmath>
 
 
 
@@ -57,7 +58,8 @@ public:
     
     void debug(){
         std::cout<<"active: "<<active<<" unprocessed: "<<unprocessed<<" free: "<<free<<" size: "<<this->getSize()<<std::endl;
-        for (int i = active; i != nextIndex(free); i=(i+1)%capacity) {
+        
+        for (int i = active; i != free && free > -1 ; i=nextIndex(i) ) {
             std::cout<<data[i].receiveTime_<<" ";
         }
         std::cout<<std::endl;
@@ -83,13 +85,13 @@ public:
             return free;
 
         while (low < high) {
-            mid = (low + high) / 2;
+            mid = ceil( ( low + high ) / 2 );
 
             if (this->compareFuntion(data[mid], value)){
-                low = (mid + 1) % capacity;
+                low = ( mid + 1 ) % capacity;
             }
             else {
-                high = (mid - 1 + capacity) % capacity;
+                high = ( mid ) % capacity;  //very good chance for infinite loop
             }
         }
 

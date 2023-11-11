@@ -2,12 +2,15 @@
 #include"EventClass.hpp"
 #include"UnifiedQueue.hpp"
 
-
-
+UnifiedQueue<Event,compareEvent> queue(10);
+    
+void location(Event event){
+    std::cout<<queue.findInsertPosition2(event)<<std::endl;
+};
 
 int main(){
     
-    UnifiedQueue<Event,compareEvent> queue(10);
+    
 
     Event event1(1, 1, "a", "b", 1, true);
     Event event2(2, 2, "a", "b", 1, true);
@@ -21,9 +24,9 @@ int main(){
     Event event10(1, 11, "a", "b", 1, true);
 
     queue.debug();
+
     queue.enqueue(event1);
     queue.debug();
-    std::cout<<queue.findInsertPosition2(event2)<<std::endl;
     
     // queue.debug();
     
@@ -36,11 +39,18 @@ int main(){
     queue.enqueue(event3);
     queue.debug();
     queue.enqueue(event6);
+    queue.debug();
+
+
     queue.enqueue(event5);
     queue.debug();
+
     queue.dequeue();
+    queue.debug();
+
     queue.dequeue();
     queue.debug(); 
+
     queue.enqueue(event2);
     queue.debug();
     
