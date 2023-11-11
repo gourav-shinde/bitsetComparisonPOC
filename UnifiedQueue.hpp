@@ -9,6 +9,8 @@
 // T is the type of the elements in the queue
 // comparator is function that compares two elements of type T 
 // and returns true if the first element is smaller than the second
+// T: DataType
+// comparator: compare function which return A<B
 template <typename T,typename comparator>
 class UnifiedQueue {
 private:

@@ -22,6 +22,7 @@ int main(){
     Event event8(1, 8, "a", "b", 1, true);
     Event event9(1, 10, "a", "b", 1, true);
     Event event10(1, 11, "a", "b", 1, true);
+    Event event11(1, 9, "a", "b", 1, true);
 
     queue.debug();
 
@@ -64,6 +65,16 @@ int main(){
     queue.debug();
 
     queue.enqueue(event9);
+    queue.debug();
+
+    queue.enqueue(event11); //queue should be full
+    queue.debug();
+
+
+    queue.dequeue();
+    queue.debug();
+
+    queue.enqueue(event11);
     queue.debug();
     
 
