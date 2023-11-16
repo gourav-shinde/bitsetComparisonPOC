@@ -27,9 +27,9 @@ public:
 // read atomic documentation and make changes
     UnifiedQueue(size_t capacity=64) {
         queue_.resize(capacity);
-        fossilStart_ = -1;
-        activeStart_ = 0;
-        unprocessedStart_ = 0;
+        fossilStart_.store(-1);
+        activeStart_.store(0);
+        unprocessedStart_.store(0);
         this->capacity_ = capacity;
     }
 
@@ -38,9 +38,9 @@ public:
         return this->getSize() == 0;
     }
 
+    // checks if fossilStart_ is one index behind activeStart_ zone, if yes then queue is full
     bool isFull() {
-
-        if(nextIndex(fossilStart_)==activeStart_ && fossilStart_!=-1){
+        if(nextIndex(fossilStart_.load())==activeStart_.load() && fossilStart_.load()!=-1){
             return true;
         }
         return false;
@@ -50,23 +50,26 @@ public:
     int getSize(){
         int size = 0;
 
+        // Initial case
         if(fossilStart_==-1){
             return size;
         }
-        
+        // when there is no rotation in queue
         if (fossilStart_ > activeStart_){
             size = fossilStart_ - activeStart_;
         }
+        // rotation i.e fossileStart_ < activeStart_
         else if(fossilStart_ < activeStart_){
             size = capacity_ - activeStart_ + fossilStart_;
         }
         return size;
     }
     
+    // Print the current state of queue
     void debug(){
-        std::cout<<"activeStart_: "<<activeStart_<<" unprocessedStart_: "<<unprocessedStart_<<" fossilStart_: "<<fossilStart_<<" size: "<<this->getSize()<<std::endl;
+        std::cout<<"activeStart_: "<<activeStart_.load()<<" unprocessedStart_: "<<unprocessedStart_.load()<<" fossilStart_: "<<fossilStart_.load()<<" size: "<<this->getSize()<<std::endl;
         
-        for (int i = activeStart_; i != fossilStart_ && fossilStart_ > -1 ; i=nextIndex(i) ) {
+        for (int i = activeStart_.load(); i != fossilStart_.load() && fossilStart_.load() > -1 ; i=nextIndex(i) ) {
             std::cout<<queue_[i].receiveTime_<<" ";
         }
         std::cout<<std::endl;
@@ -77,19 +80,23 @@ public:
         std::cout<<std::endl;
     }
 
+    // doesnt access indexes directly
     int nextIndex(int idx) {
         return (idx + 1) % capacity_;
     }
 
+    // doesnt access indexes directly
     int prevIndex(int idx) {
         return (idx - 1 + capacity_) % capacity_;
     }
   
+    // find element smaller than value
     int binarySearch(T value, int low, int high) {
         int mid;
         
+        // THis will never trigger, as this condition is checked in the parent function
         if (isEmpty())
-            return fossilStart_;
+            return fossilStart_.load();
 
         while (low < high) {
             mid = ceil( ( low + high ) / 2 );
@@ -105,28 +112,32 @@ public:
         return (low) % capacity_;
     }
 
+    // find insert position for value depending whether queue is rotated or not
     int findInsertPosition(T value){
-        int low = activeStart_;
-        int high = fossilStart_;
+        int low = activeStart_.load();
+        int high = fossilStart_.load();
         int mid;
 
         if (isEmpty())
-            return fossilStart_;
+            return fossilStart_.load();
 
-        if(activeStart_<fossilStart_){
-            return binarySearch(value,activeStart_,fossilStart_);
+        // when there is no rotation in queue
+        if(activeStart_.load() < fossilStart_.load()){
+            return binarySearch(value,activeStart_.load(),fossilStart_.load());
         }
+        // rotation i.e fossileStart_ < activeStart_
         else{
             if(compare_(value,queue_[capacity_-1])){
-                return binarySearch(value,activeStart_,capacity_-1);
+                return binarySearch(value,activeStart_.load(),capacity_-1);
             }
             else{
-                return binarySearch(value,0,fossilStart_);
+                return binarySearch(value,0,fossilStart_.load());
             }
         }
 
     }
 
+    // shift elements to right
     void shiftElements(int start, int end) {
         int i = end;
         while (i != start) {
@@ -135,6 +146,7 @@ public:
         }
     }
 
+    // enqueue the value
     void enqueue(Event value) {
         if (isFull() && fossilStart_ != -1) {
             std::cout << "Queue is full, can't insert element." << std::endl;
@@ -143,14 +155,15 @@ public:
         
         // checking for rollback
         if (isEmpty()) {
-            fossilStart_ = activeStart_ = 0;
-            queue_[fossilStart_] = value;
+            fossilStart_.store(0);
+            activeStart_.store(0);
+            queue_[fossilStart_.load()] = value;
         } else {
             int insertPos = findInsertPosition(value);
-            shiftElements(insertPos, fossilStart_);
+            shiftElements(insertPos, fossilStart_.load());
             queue_[insertPos] = value;    
         }
-        fossilStart_ = nextIndex(fossilStart_);
+        fossilStart_.store(nextIndex(fossilStart_.load()));
     }
 
     // dequeue from activeStart_ zone
@@ -159,46 +172,46 @@ public:
             std::cout << "Queue is empty, can't remove element." << std::endl;
             return T();
         }
-        T value = queue_[activeStart_];
-        activeStart_ = nextIndex(activeStart_);
+        T value = queue_[activeStart_.load()];
+        activeStart_ = nextIndex(activeStart_.load());
         return value;
     }
 
     // get Indexes
     int getactiveStart_Index()   {
-        return activeStart_;
+        return activeStart_.load();
     }
 
     int getUnprocessedStart_Index()   {
-        return unprocessedStart_;
+        return unprocessedStart_.load();
     }
 
     int getfossileStart_Index()   {
-        return fossilStart_;
+        return fossilStart_.load();
     }
 
 
     // set Indexes
     void setactiveStart_Index(int index)   {
-        activeStart_ = index;
+        activeStart_.store(index);
     }
 
     void setUnprocessedStart_Index(int index)   {
-        unprocessedStart_ = index;
+        unprocessedStart_.store(index);
     }
 
     void setfossileStart_Index(int index)   {
-        fossilStart_ = index;
+        fossilStart_.store(index);
     }
 
     // increament fossilStart_ index
     int increamentfossileStart_Index()   {
-        if(nextIndex(fossilStart_)==activeStart_){
+        if(nextIndex(fossilStart_.load())==activeStart_.load()){
             std::cout << "Queue is full, can't insert element." << std::endl;
             return -1;
         }
-        fossilStart_ = nextIndex(fossilStart_);
-        return fossilStart_;
+        fossilStart_.store(nextIndex(fossilStart_.load()));
+        return fossilStart_.load();
     }
     
 };
