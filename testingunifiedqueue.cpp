@@ -5,7 +5,7 @@
 UnifiedQueue<Event,compareEvent> queue(10);
     
 void location(Event event){
-    std::cout<<queue.findInsertPosition2(event)<<std::endl;
+    std::cout<<queue.findInsertPosition(event)<<std::endl;
 };
 
 int main(){

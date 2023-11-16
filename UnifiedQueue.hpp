@@ -14,54 +14,59 @@
 template <typename T,typename comparator>
 class UnifiedQueue {
 private:
-    std::vector<T> data;
-    std::atomic<int> active; //start of processed events 
-    std::atomic<int> unprocessed; //start of processed events 
-    std::atomic<int> free; //next available index, start of free space
-    int capacity;
-    comparator compareFuntion;
+// put postfix _ for private variables
+    std::vector<T>  data; //change to queue_
+    std::atomic<int> activeStart_; //start of processed events ,activeStart_ zone
+    std::atomic<int> unprocessedStart_; //start of unprocessedStart_ events 
+    std::atomic<int> fossilStart_; //next available index, start of free space
+    size_t capacity; 
+    comparator compare;
 
 public:
-    UnifiedQueue(int capacity) {
+
+// read atomic documentation and make changes
+    UnifiedQueue(size_t capacity=64) {
         data.resize(capacity);
-        free = -1;
-        active = 0;
-        unprocessed = 0;
+        fossilStart_ = -1;
+        activeStart_ = 0;
+        unprocessedStart_ = 0;
         this->capacity = capacity;
     }
 
+    // check logic
     bool isEmpty() {
         return this->getSize() == 0;
     }
 
     bool isFull() {
-        if(nextIndex(free)==active){
+
+        if(nextIndex(fossilStart_)==activeStart_ && fossilStart_!=-1){
             return true;
         }
         return false;
     }
 
-    // calculate size of active zone to free space
+    // calculate size of activeStart_ zone to fossilStart_ space
     int getSize(){
         int size = 0;
 
-        if(free==-1){
+        if(fossilStart_==-1){
             return size;
         }
         
-        if (free > active){
-            size = free - active;
+        if (fossilStart_ > activeStart_){
+            size = fossilStart_ - activeStart_;
         }
-        else if(free < active){
-            size = capacity - active + free;
+        else if(fossilStart_ < activeStart_){
+            size = capacity - activeStart_ + fossilStart_;
         }
         return size;
     }
     
     void debug(){
-        std::cout<<"active: "<<active<<" unprocessed: "<<unprocessed<<" free: "<<free<<" size: "<<this->getSize()<<std::endl;
+        std::cout<<"activeStart_: "<<activeStart_<<" unprocessedStart_: "<<unprocessedStart_<<" fossilStart_: "<<fossilStart_<<" size: "<<this->getSize()<<std::endl;
         
-        for (int i = active; i != free && free > -1 ; i=nextIndex(i) ) {
+        for (int i = activeStart_; i != fossilStart_ && fossilStart_ > -1 ; i=nextIndex(i) ) {
             std::cout<<data[i].receiveTime_<<" ";
         }
         std::cout<<std::endl;
@@ -84,12 +89,12 @@ public:
         int mid;
         
         if (isEmpty())
-            return free;
+            return fossilStart_;
 
         while (low < high) {
             mid = ceil( ( low + high ) / 2 );
 
-            if (this->compareFuntion(data[mid], value)){
+            if (this->compare(data[mid], value)){
                 low = ( mid + 1 ) % capacity;
             }
             else {
@@ -100,23 +105,23 @@ public:
         return (low) % capacity;
     }
 
-    int findInsertPosition2(T value){
-        int low = active;
-        int high = free;
+    int findInsertPosition(T value){
+        int low = activeStart_;
+        int high = fossilStart_;
         int mid;
 
         if (isEmpty())
-            return free;
+            return fossilStart_;
 
-        if(active<free){
-            return binarySearch(value,active,free);
+        if(activeStart_<fossilStart_){
+            return binarySearch(value,activeStart_,fossilStart_);
         }
         else{
-            if(compareFuntion(value,data[capacity-1])){
-                return binarySearch(value,active,capacity-1);
+            if(compare(value,data[capacity-1])){
+                return binarySearch(value,activeStart_,capacity-1);
             }
             else{
-                return binarySearch(value,0,free);
+                return binarySearch(value,0,fossilStart_);
             }
         }
 
@@ -131,69 +136,69 @@ public:
     }
 
     void enqueue(Event value) {
-        if (isFull() && free != -1) {
+        if (isFull() && fossilStart_ != -1) {
             std::cout << "Queue is full, can't insert element." << std::endl;
             return;
         }
         
         // checking for rollback
         if (isEmpty()) {
-            free = active = 0;
-            data[free] = value;
+            fossilStart_ = activeStart_ = 0;
+            data[fossilStart_] = value;
         } else {
-            int insertPos = findInsertPosition2(value);
-            shiftElements(insertPos, free);
+            int insertPos = findInsertPosition(value);
+            shiftElements(insertPos, fossilStart_);
             data[insertPos] = value;    
         }
-        free = nextIndex(free);
+        fossilStart_ = nextIndex(fossilStart_);
     }
 
-    // dequeue from active zone
+    // dequeue from activeStart_ zone
     T dequeue() {
         if (isEmpty()) {
             std::cout << "Queue is empty, can't remove element." << std::endl;
             return T();
         }
-        T value = data[active];
-        active = nextIndex(active);
+        T value = data[activeStart_];
+        activeStart_ = nextIndex(activeStart_);
         return value;
     }
 
     // get Indexes
-    int getActiveIndex()   {
-        return active;
+    int getactiveStart_Index()   {
+        return activeStart_;
     }
 
-    int getUnprocessedIndex()   {
-        return unprocessed;
+    int getUnprocessedStart_Index()   {
+        return unprocessedStart_;
     }
 
-    int getFreeIndex()   {
-        return free;
+    int getfossileStart_Index()   {
+        return fossilStart_;
     }
 
 
     // set Indexes
-    void setActiveIndex(int index)   {
-        active = index;
+    void setactiveStart_Index(int index)   {
+        activeStart_ = index;
     }
 
-    void setUnprocessedIndex(int index)   {
-        unprocessed = index;
+    void setUnprocessedStart_Index(int index)   {
+        unprocessedStart_ = index;
     }
 
-    void setFreeIndex(int index)   {
-        free = index;
+    void setfossileStart_Index(int index)   {
+        fossilStart_ = index;
     }
 
-    // increament free index
-    int increamentFreeIndex()   {
-        if(nextIndex(free)==active){
+    // increament fossilStart_ index
+    int increamentfossileStart_Index()   {
+        if(nextIndex(fossilStart_)==activeStart_){
             std::cout << "Queue is full, can't insert element." << std::endl;
             return -1;
         }
-        free = nextIndex(free);
-        return free;
+        fossilStart_ = nextIndex(fossilStart_);
+        return fossilStart_;
     }
     
 };
