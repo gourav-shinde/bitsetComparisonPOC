@@ -26,9 +26,9 @@ int main(){
     Event event11(1, 9, "a", "b", 1, true);
 
     queue.debug();
-    std::cout<<"debug okay";
+    // std::cout<<"debug okay";
     queue.enqueue(event1);
-    std::cout<<"enqueue okay";
+    // std::cout<<"enqueue okay";
     queue.debug();
     
     // queue.debug();

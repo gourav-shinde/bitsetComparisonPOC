@@ -23,7 +23,8 @@ private:
 public:
     // read atomic documentation and make changes
     UnifiedQueue(size_t capacity = 64) {
-        queue_.resize(capacity); // use vector.reserve
+        // use vector.reserve
+        queue_.reserve(capacity);
         // change free start to 0
         freeStart_.store(0, std::memory_order_relaxed); // memory order relaxed, same for all 3
         // change active and unprocessed to -1
@@ -73,9 +74,9 @@ public:
             std::cout << queue_[i].receiveTime_ << " ";
         }
         std::cout << std::endl;
-
-        for (auto itr : queue_) {
-            std::cout << itr.receiveTime_ << " ";
+        std::cout<<"queue: "<<queue_.size()<<" capacity "<<queue_.capacity()<<std::endl;
+        for (int i=0;i<queue_.size();i++){
+            std::cout << queue_.at(i).receiveTime_ << " ";
         }
         std::cout << std::endl;
     }
@@ -160,12 +161,12 @@ public:
             // make unprocessed and active to 0
             unprocessedStart_.store(0, std::memory_order_relaxed);
             activeStart_.store(0, std::memory_order_relaxed);
-            queue_[freeStart_.load(std::memory_order_relaxed)] = value;
+            queue_.insert(queue_.begin()+ freeStart_.load(std::memory_order_relaxed), value);
         }
         else {
             int insertPos = findInsertPosition(value);
             shiftElements(insertPos, freeStart_.load(std::memory_order_relaxed));
-            queue_[insertPos] = value;
+            queue_.insert(queue_.begin()+insertPos, value);
         }
         freeStart_.store(nextIndex(freeStart_.load(std::memory_order_relaxed)), std::memory_order_relaxed);
     }
