@@ -147,7 +147,7 @@ public:
 
     // enqueue the value
     void enqueue(Event value) {
-        // increment freeStart_ index first
+        // increment freeStart_ index first for ABA. 
 
         // this changes
         if (isFull()) {
