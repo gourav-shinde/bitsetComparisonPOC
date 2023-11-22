@@ -25,10 +25,10 @@ public:
     UnifiedQueue(size_t capacity = 64) {
         queue_.resize(capacity); // use vector.reserve
         // change free start to 0
-        freeStart_.store(0); // memory order relaxed, same for all 3
+        freeStart_.store(0, std::memory_order_relaxed); // memory order relaxed, same for all 3
         // change active and unprocessed to -1
-        activeStart_.store(-1);
-        unprocessedStart_.store(-1);
+        activeStart_.store(-1, std::memory_order_relaxed);
+        unprocessedStart_.store(-1, std::memory_order_relaxed);
         this->capacity_ = capacity;
     }
 
@@ -40,7 +40,7 @@ public:
     // checks if freeStart_ is one index behind activeStart_ zone, if yes then queue is full
     bool isFull() {
         // TODO TEST
-        if ( nextIndex(freeStart_.load()) == activeStart_.load() ) {
+        if (nextIndex(freeStart_.load(std::memory_order_relaxed)) == activeStart_.load(std::memory_order_relaxed)) {
             return true;
         }
         return false;
@@ -51,25 +51,25 @@ public:
         uint64_t queue_size = 0; // change name
 
         // Initial case
-        if (activeStart_.load() == -1) {
+        if (activeStart_.load(std::memory_order_relaxed) == -1) {
             return queue_size;
         }
         // when there is no rotation in queue
-        if (freeStart_.load() > activeStart_.load()) {
-            queue_size = freeStart_.load() - activeStart_.load();
+        if (freeStart_.load(std::memory_order_relaxed) > activeStart_.load(std::memory_order_relaxed)) {
+            queue_size = freeStart_.load(std::memory_order_relaxed) - activeStart_.load(std::memory_order_relaxed);
         }
         // rotation i.e fossileStart_ < activeStart_
-        else if (freeStart_.load() < activeStart_.load()) {
-            queue_size = capacity_ - activeStart_.load() + freeStart_.load();
+        else if (freeStart_.load(std::memory_order_relaxed) < activeStart_.load(std::memory_order_relaxed)) {
+            queue_size = capacity_ - activeStart_.load(std::memory_order_relaxed) + freeStart_.load(std::memory_order_relaxed);
         }
         return queue_size;
     }
 
     // Print the current state of queue
     void debug() {
-        std::cout << "activeStart_: " << activeStart_.load() << " unprocessedStart_: " << unprocessedStart_.load() << " freeStart_: " << freeStart_.load() << " size: " << this->size() << std::endl;
+        std::cout << "activeStart_: " << activeStart_.load(std::memory_order_relaxed) << " unprocessedStart_: " << unprocessedStart_.load(std::memory_order_relaxed) << " freeStart_: " << freeStart_.load(std::memory_order_relaxed) << " size: " << this->size() << std::endl;
 
-        for (int i = unprocessedStart_.load(); i != freeStart_.load() && activeStart_.load() > -1; i = nextIndex(i)) {
+        for (int i = unprocessedStart_.load(std::memory_order_relaxed); i != freeStart_.load(std::memory_order_relaxed) && activeStart_.load(std::memory_order_relaxed) > -1; i = nextIndex(i)) {
             std::cout << queue_[i].receiveTime_ << " ";
         }
         std::cout << std::endl;
@@ -96,7 +96,7 @@ public:
 
         // THis will never trigger, as this condition is checked in the parent function
         if (isEmpty())
-            return freeStart_.load();
+            return freeStart_.load(std::memory_order_relaxed);
 
         while (low < high) {
             mid = ceil((low + high) / 2);
@@ -114,24 +114,24 @@ public:
 
     // find insert position for value depending whether queue is rotated or not
     int findInsertPosition(T value) {
-        int low = activeStart_.load();
-        int high = freeStart_.load();
+        int low = activeStart_.load(std::memory_order_relaxed);
+        int high = freeStart_.load(std::memory_order_relaxed);
         int mid;
 
         if (isEmpty())
-            return freeStart_.load();
+            return freeStart_.load(std::memory_order_relaxed);
 
         // when there is no rotation in queue
-        if (activeStart_.load() < freeStart_.load()) {
-            return binarySearch(value, activeStart_.load(), freeStart_.load());
+        if (activeStart_.load(std::memory_order_relaxed) < freeStart_.load(std::memory_order_relaxed)) {
+            return binarySearch(value, activeStart_.load(std::memory_order_relaxed), freeStart_.load(std::memory_order_relaxed));
         }
         // rotation i.e fossileStart_ < activeStart_
         else {
             if (compare_(value, queue_[capacity_ - 1])) {
-                return binarySearch(value, activeStart_.load(), capacity_ - 1);
+                return binarySearch(value, activeStart_.load(std::memory_order_relaxed), capacity_ - 1);
             }
             else {
-                return binarySearch(value, 0, freeStart_.load());
+                return binarySearch(value, 0, freeStart_.load(std::memory_order_relaxed));
             }
         }
     }
@@ -158,16 +158,16 @@ public:
         // checking for rollback
         if (isEmpty()) {
             // make unprocessed and active to 0
-            unprocessedStart_.store(0);
-            activeStart_.store(0);
-            queue_[freeStart_.load()] = value;
+            unprocessedStart_.store(0, std::memory_order_relaxed);
+            activeStart_.store(0, std::memory_order_relaxed);
+            queue_[freeStart_.load(std::memory_order_relaxed)] = value;
         }
         else {
             int insertPos = findInsertPosition(value);
-            shiftElements(insertPos, freeStart_.load());
+            shiftElements(insertPos, freeStart_.load(std::memory_order_relaxed));
             queue_[insertPos] = value;
         }
-        freeStart_.store(nextIndex(freeStart_.load()));
+        freeStart_.store(nextIndex(freeStart_.load(std::memory_order_relaxed)), std::memory_order_relaxed);
     }
 
     // dequeue returns start of unprocessed. and increment it
@@ -176,69 +176,71 @@ public:
             std::cout << "Queue is empty, can't remove element." << std::endl;
             return T();
         }
-        T value = queue_[unprocessedStart_.load()];
-        unprocessedStart_ = nextIndex(unprocessedStart_.load());
+        T value = queue_[unprocessedStart_.load(std::memory_order_relaxed)];
+        unprocessedStart_.store(nextIndex(unprocessedStart_.load(std::memory_order_relaxed)), std::memory_order_relaxed);
         return value;
     }
 
     // get Indexes
     int getactiveStart_Index() {
-        return activeStart_.load();
+        return activeStart_.load(std::memory_order_relaxed);
     }
 
     int getUnprocessedStart_Index() {
-        return unprocessedStart_.load();
+        return unprocessedStart_.load(std::memory_order_relaxed);
     }
 
     int getfossileStart_Index() {
-        return freeStart_.load();
+        return freeStart_.load(std::memory_order_relaxed);
     }
 
     // set Indexes
     void setactiveStart_Index(int index) {
-        activeStart_.store(index);
+        activeStart_.store(index, std::memory_order_relaxed);
     }
 
     void setUnprocessedStart_Index(int index) {
-        unprocessedStart_.store(index);
+        unprocessedStart_.store(index, std::memory_order_relaxed);
     }
 
     void setfossileStart_Index(int index) {
-        freeStart_.store(index);
+        freeStart_.store(index, std::memory_order_relaxed);
     }
 
     // increament freeStart_ index
     int increamentfreeStart_Index() {
-        if (nextIndex(freeStart_.load()) == activeStart_.load()) {
+        if (nextIndex(freeStart_.load(std::memory_order_relaxed)) == activeStart_.load(std::memory_order_relaxed)) {
             std::cout << "Queue is full, can't insert element." << std::endl;
             return -1;
         }
-        freeStart_.store(nextIndex(freeStart_.load()));
-        return freeStart_.load();
+        freeStart_.store(nextIndex(freeStart_.load(std::memory_order_relaxed)), std::memory_order_relaxed);
+        return freeStart_.load(std::memory_order_relaxed);
     }
 
 
     // increament freeStart_ index
     int increamentActiveStart_Index() {
-        if (nextIndex(activeStart_.load()) > unprocessedStart_.load()) {
+        if (nextIndex(activeStart_.load(std::memory_order_relaxed)) > unprocessedStart_.load(std::memory_order_relaxed)) {
             std::cout << "Cannot do that. activeStart goes in front of unprocessed" << std::endl;
             return -1;
         }
-        activeStart_.store(nextIndex(activeStart_.load()));
-        return activeStart_.load();
+        activeStart_.store(nextIndex(activeStart_.load(std::memory_order_relaxed)), std::memory_order_relaxed);
+        return activeStart_.load(std::memory_order_relaxed);
     }
 
+    //ThiS IS TODO DISCUSS THIS
     // retrive index of timestamp for fossile collection
     //should be between active and unprocessed.
     //this increaments the activeStart_ index to this index
+    //below is temp fuction for testing
     void fossilizeData(uint64_t index) {
         // check if index lies between active and unprocessed
-        if (index < activeStart_.load() || index > unprocessedStart_.load()) {
+        if (index < activeStart_.load(std::memory_order_relaxed) || index > unprocessedStart_.load(std::memory_order_relaxed)) {
             std::cout << "Index out of range" << std::endl;
             return;
         }
         else {
-            activeStart_.store(index);
+            activeStart_.store(index, std::memory_order_relaxed);
         }
     }
 };
