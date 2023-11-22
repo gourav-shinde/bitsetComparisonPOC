@@ -25,10 +25,10 @@ public:
     UnifiedQueue(size_t capacity = 64) {
         queue_.resize(capacity); // use vector.reserve
         // change free start to 0
-        freeStart_.store(-1); // memory order relaxed, same for all 3
+        freeStart_.store(0); // memory order relaxed, same for all 3
         // change active and unprocessed to -1
-        activeStart_.store(0);
-        unprocessedStart_.store(0);
+        activeStart_.store(-1);
+        unprocessedStart_.store(-1);
         this->capacity_ = capacity;
     }
 
@@ -40,7 +40,7 @@ public:
     // checks if freeStart_ is one index behind activeStart_ zone, if yes then queue is full
     bool isFull() {
         // TODO TEST
-        if (activeStart_.load() != -1 && nextIndex(freeStart_.load()) == activeStart_.load()) {
+        if ( nextIndex(freeStart_.load()) == activeStart_.load() ) {
             return true;
         }
         return false;
@@ -51,16 +51,16 @@ public:
         uint64_t queue_size = 0; // change name
 
         // Initial case
-        if (freeStart_ == -1) {
+        if (activeStart_.load() == -1) {
             return queue_size;
         }
         // when there is no rotation in queue
-        if (freeStart_ > activeStart_) {
-            queue_size = freeStart_ - activeStart_;
+        if (freeStart_.load() > activeStart_.load()) {
+            queue_size = freeStart_.load() - activeStart_.load();
         }
         // rotation i.e fossileStart_ < activeStart_
-        else if (freeStart_ < activeStart_) {
-            queue_size = capacity_ - activeStart_ + freeStart_;
+        else if (freeStart_.load() < activeStart_.load()) {
+            queue_size = capacity_ - activeStart_.load() + freeStart_.load();
         }
         return queue_size;
     }
@@ -69,7 +69,7 @@ public:
     void debug() {
         std::cout << "activeStart_: " << activeStart_.load() << " unprocessedStart_: " << unprocessedStart_.load() << " freeStart_: " << freeStart_.load() << " size: " << this->size() << std::endl;
 
-        for (int i = unprocessedStart_.load(); i != freeStart_.load() && freeStart_.load() > -1; i = nextIndex(i)) {
+        for (int i = unprocessedStart_.load(); i != freeStart_.load() && activeStart_.load() > -1; i = nextIndex(i)) {
             std::cout << queue_[i].receiveTime_ << " ";
         }
         std::cout << std::endl;
@@ -150,7 +150,7 @@ public:
         // increment freeStart_ index first
 
         // this changes
-        if (isFull() && freeStart_ != -1) {
+        if (isFull()) {
             std::cout << "Queue is full, can't insert element." << std::endl;
             return;
         }
@@ -158,7 +158,7 @@ public:
         // checking for rollback
         if (isEmpty()) {
             // make unprocessed and active to 0
-            freeStart_.store(0);
+            unprocessedStart_.store(0);
             activeStart_.store(0);
             queue_[freeStart_.load()] = value;
         }
@@ -208,13 +208,24 @@ public:
     }
 
     // increament freeStart_ index
-    int increamentfossileStart_Index() {
+    int increamentfreeStart_Index() {
         if (nextIndex(freeStart_.load()) == activeStart_.load()) {
             std::cout << "Queue is full, can't insert element." << std::endl;
             return -1;
         }
         freeStart_.store(nextIndex(freeStart_.load()));
         return freeStart_.load();
+    }
+
+
+    // increament freeStart_ index
+    int increamentActiveStart_Index() {
+        if (nextIndex(activeStart_.load()) > unprocessedStart_.load()) {
+            std::cout << "Cannot do that. activeStart goes in front of unprocessed" << std::endl;
+            return -1;
+        }
+        activeStart_.store(nextIndex(activeStart_.load()));
+        return activeStart_.load();
     }
 
     // retrive index of timestamp for fossile collection

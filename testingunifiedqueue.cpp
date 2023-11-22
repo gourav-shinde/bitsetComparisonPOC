@@ -47,10 +47,12 @@ int main(){
     queue.enqueue(event5);
     queue.debug();
 
-    queue.dequeue();
+    queue.dequeue(); //increments unprocessedStart
+    queue.increamentActiveStart_Index() ;
     queue.debug();
 
     queue.dequeue();
+    queue.increamentActiveStart_Index() ;
     queue.debug(); 
 
     queue.enqueue(event2);
@@ -73,6 +75,7 @@ int main(){
 
 
     queue.dequeue();
+    queue.increamentActiveStart_Index() ;
     queue.debug();
 
     queue.enqueue(event11);

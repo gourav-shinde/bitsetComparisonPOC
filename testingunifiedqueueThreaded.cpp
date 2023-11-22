@@ -21,7 +21,8 @@ void do_random_work(UnifiedQueue<Event, compareEvent> *queue){
             queue->enqueue(r.getEvent());
         }
         else{
-            queue->dequeue(); 
+            queue->dequeue(); //to emulate process event
+            queue->increamentActiveStart_Index() ;//to emulate fossile collection
         }
     }
     
