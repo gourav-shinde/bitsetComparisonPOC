@@ -1,7 +1,7 @@
 #include<iostream>
 #include"EventClass.hpp"
 #include"UnifiedQueue.hpp"
-
+#include<chrono>
 UnifiedQueue<Event,compareEvent> queue(10);
     
 void location(Event event){
@@ -9,7 +9,8 @@ void location(Event event){
 };
 
 int main(){
-    
+    // chrono timing
+    auto start = std::chrono::high_resolution_clock::now();
     
 
     Event event1(1, 1, "a", "b", 1, true);
@@ -80,6 +81,12 @@ int main(){
 
     queue.enqueue(event11);
     queue.debug();
-    
 
+    // chrono end time
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // calculate duration
+    double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    
+    std::cout<<"Time taken by program is : "<<time_taken<<std::endl;
 }
