@@ -5,7 +5,7 @@
 
 void do_work(UnifiedQueue<Event, compareEvent> *queue){
     RandomEventGenerator r;
-    for(int i=0;i<10;i++){
+    for(int i=0;i<30;i++){
         queue->enqueue(r.getEvent());
     }
 }
@@ -15,7 +15,7 @@ void do_random_work(UnifiedQueue<Event, compareEvent> *queue){
     // if random number is even, enqueue
     // if random number is odd, dequeue
     RandomEventGenerator r;
-    for(int i=0;i<10;i++){
+    for(int i=0;i<50;i++){
         int random = r.generateRandomUint8();
         if(random%2==0){
             queue->enqueue(r.getEvent());

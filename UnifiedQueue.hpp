@@ -76,11 +76,13 @@ public:
     void debug() {
         std::cout << "activeStart_: " << activeStart_.load(std::memory_order_relaxed) << " unprocessedStart_: " << unprocessedStart_.load(std::memory_order_relaxed) << " freeStart_: " << freeStart_.load(std::memory_order_relaxed) << " size: " << this->size() << std::endl;
 
-        for (int i = unprocessedStart_.load(std::memory_order_relaxed); nextIndex(i) != freeStart_.load(std::memory_order_relaxed) && activeStart_.load(std::memory_order_relaxed) > -1; i = nextIndex(i)) {
+        int i = unprocessedStart_.load(std::memory_order_relaxed);
+        do{
             std::cout << queue_[i].receiveTime_ << " ";
-        }
+            i = nextIndex(i);
+        }while(i!=freeStart_.load(std::memory_order_relaxed));
         std::cout << std::endl;
-
+        
         for (auto itr : queue_) {
             std::cout << itr.receiveTime_ << " ";
         }
