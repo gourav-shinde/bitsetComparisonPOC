@@ -2,6 +2,7 @@
 #include <atomic>
 #include <vector>
 #include <cmath>
+#include <stdexcept>
 
 // T is the type of the elements in the queue
 // comparator is function that compare_s two elements of type T
@@ -23,13 +24,13 @@ private:
 public:
     // read atomic documentation and make changes
     UnifiedQueue(size_t capacity = 64) {
-        queue_.resize(capacity); // use vector.reserve
+        queue_.resize(capacity);
         // change free start to 0
         freeStart_.store(0, std::memory_order_relaxed); // memory order relaxed, same for all 3
         // change active and unprocessed to -1
         activeStart_.store(-1, std::memory_order_relaxed);
         unprocessedStart_.store(-1, std::memory_order_relaxed);
-        this->capacity_ = capacity;
+        this->capacity_ = capacity; // use queue.size(), no need to store capacity
     }
     //adding some comment to test git action
     // check logic
@@ -40,7 +41,10 @@ public:
     // checks if freeStart_ is one index behind activeStart_ zone, if yes then queue is full
     bool isFull() {
         // TODO TEST
-        if (nextIndex(freeStart_.load(std::memory_order_relaxed)) == activeStart_.load(std::memory_order_relaxed)) {
+        // check atomic compare  and use freeStart==active start so u get n size instead of n-1
+        
+        //check for atomic safe compare
+        if (freeStart_.load(std::memory_order_relaxed) == activeStart_.load(std::memory_order_relaxed)) {
             return true;
         }
         return false;
@@ -62,6 +66,9 @@ public:
         else if (freeStart_.load(std::memory_order_relaxed) < activeStart_.load(std::memory_order_relaxed)) {
             queue_size = capacity_ - activeStart_.load(std::memory_order_relaxed) + freeStart_.load(std::memory_order_relaxed);
         }
+        else{ // when freeStart_ == activeStart_ (queue is full)
+            return queue_.size();
+        }
         return queue_size;
     }
 
@@ -69,7 +76,7 @@ public:
     void debug() {
         std::cout << "activeStart_: " << activeStart_.load(std::memory_order_relaxed) << " unprocessedStart_: " << unprocessedStart_.load(std::memory_order_relaxed) << " freeStart_: " << freeStart_.load(std::memory_order_relaxed) << " size: " << this->size() << std::endl;
 
-        for (int i = unprocessedStart_.load(std::memory_order_relaxed); i != freeStart_.load(std::memory_order_relaxed) && activeStart_.load(std::memory_order_relaxed) > -1; i = nextIndex(i)) {
+        for (int i = unprocessedStart_.load(std::memory_order_relaxed); nextIndex(i) != freeStart_.load(std::memory_order_relaxed) && activeStart_.load(std::memory_order_relaxed) > -1; i = nextIndex(i)) {
             std::cout << queue_[i].receiveTime_ << " ";
         }
         std::cout << std::endl;
@@ -148,7 +155,7 @@ public:
     // enqueue the value
     void enqueue(Event value) {
         // increment freeStart_ index first for ABA. 
-
+        // store freeStart_ index in a variable and use it in the function and then pass it next
         // this changes
         if (isFull()) {
             std::cout << "Queue is full, can't insert element." << std::endl;
@@ -228,19 +235,7 @@ public:
         return activeStart_.load(std::memory_order_relaxed);
     }
 
-    //ThiS IS TODO DISCUSS THIS
-    // retrive index of timestamp for fossile collection
-    //should be between active and unprocessed.
-    //this increaments the activeStart_ index to this index
-    //below is temp fuction for testing
-    void fossilizeData(uint64_t index) {
-        // check if index lies between active and unprocessed
-        if (index < activeStart_.load(std::memory_order_relaxed) || index > unprocessedStart_.load(std::memory_order_relaxed)) {
-            std::cout << "Index out of range" << std::endl;
-            return;
-        }
-        else {
-            activeStart_.store(index, std::memory_order_relaxed);
-        }
-    }
+    //increament active start upto a certain timestamp
+
+    
 };
