@@ -18,7 +18,6 @@ private:
     std::atomic<int> unprocessedStart_; // start of unprocessedStart_ events
     std::atomic<int> freeStart_;        // next available index, start of free space  rename to freespaceStart
 
-    size_t capacity_;
     comparator compare_;
 
 public:
@@ -30,7 +29,6 @@ public:
         // change active and unprocessed to -1
         activeStart_.store(-1, std::memory_order_relaxed);
         unprocessedStart_.store(-1, std::memory_order_relaxed);
-        this->capacity_ = capacity; // use queue.size(), no need to store capacity
     }
     //adding some comment to test git action
     // check logic
@@ -40,14 +38,16 @@ public:
 
     // checks if freeStart_ is one index behind activeStart_ zone, if yes then queue is full
     bool isFull() {
-        // TODO TEST
-        // check atomic compare  and use freeStart==active start so u get n size instead of n-1
         
-        //check for atomic safe compare
         if (freeStart_.load(std::memory_order_relaxed) == activeStart_.load(std::memory_order_relaxed)) {
             return true;
         }
         return false;
+    }
+
+    // returns queue size
+    uint64_t capacity(){
+        return queue_.size();
     }
 
     // calculate size of activeStart_ zone to freeStart_ space
@@ -64,7 +64,7 @@ public:
         }
         // rotation i.e fossileStart_ < activeStart_
         else if (freeStart_.load(std::memory_order_relaxed) < activeStart_.load(std::memory_order_relaxed)) {
-            queue_size = capacity_ - activeStart_.load(std::memory_order_relaxed) + freeStart_.load(std::memory_order_relaxed);
+            queue_size = capacity() - activeStart_.load(std::memory_order_relaxed) + freeStart_.load(std::memory_order_relaxed);
         }
         else{ // when freeStart_ == activeStart_ (queue is full)
             return queue_.size();
@@ -91,12 +91,12 @@ public:
 
     // doesnt access indexes directly
     int nextIndex(int idx) {
-        return (idx + 1) % capacity_;
+        return (idx + 1) % capacity();
     }
 
     // doesnt access indexes directly
     int prevIndex(int idx) {
-        return (idx - 1 + capacity_) % capacity_;
+        return (idx - 1 + capacity()) % capacity();
     }
 
     // find element smaller than value
@@ -111,14 +111,14 @@ public:
             mid = ceil((low + high) / 2);
 
             if (this->compare_(queue_[mid], value)) {
-                low = (mid + 1) % capacity_;
+                low = (mid + 1) % capacity();
             }
             else {
-                high = (mid) % capacity_; // very good chance for infinite loop
+                high = (mid) % capacity(); // very good chance for infinite loop
             }
         }
 
-        return (low) % capacity_;
+        return (low) % capacity();
     }
 
     // find insert position for value depending whether queue is rotated or not
@@ -136,8 +136,8 @@ public:
         }
         // rotation i.e fossileStart_ < activeStart_
         else {
-            if (compare_(value, queue_[capacity_ - 1])) {
-                return binarySearch(value, activeStart_.load(std::memory_order_relaxed), capacity_ - 1);
+            if (compare_(value, queue_[capacity() - 1])) {
+                return binarySearch(value, activeStart_.load(std::memory_order_relaxed), capacity() - 1);
             }
             else {
                 return binarySearch(value, 0, freeStart_.load(std::memory_order_relaxed));
