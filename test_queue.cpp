@@ -1,35 +1,58 @@
+// write tests using gtest to test UnifiedQUeue
+
 #include <gtest/gtest.h>
-#include"combinedqueue.hpp"
+#include "UnifiedQueue.hpp"
+#include "randomEventGenerator.hpp"
+#include <thread>
 
-TEST(QueueTest, EnqueueAndDequeue) {
-  CombinedQueue queue(3);
-  Event event1(1, 1, "a", "b", 1, true);
-  Event event2(2, 2, "a", "b", 1, true);
-  Event event3(3, 3, "a", "b", 1, true);
 
-  queue.enqueue(event1);
-  queue.enqueue(event2);
-  queue.enqueue(event3);
-
-  // EXPECT_EQ(queue.dequeue(), event1);
-  // EXPECT_EQ(queue.dequeue(), event2);
-  // EXPECT_EQ(queue.dequeue(), event3);
+RandomEventGenerator r;
+// test for isEmpty
+TEST(UnifiedQueueTest, isEmptyTest) {
+    UnifiedQueue<Event, compareEvent> queue(10);
+    EXPECT_EQ(queue.isEmpty(), true);
 }
 
-TEST(QueueTest, FindInsertPosition) {
-  CombinedQueue queue(3);
-  Event event1(1, 1, "a", "b", 1, true);
-  Event event2(2, 2, "a", "b", 1, true);
-  Event event3(3, 3, "a", "b", 1, true);
-
-  queue.enqueue(event1);
-  queue.enqueue(event2);
-
-  EXPECT_EQ(queue.findInsertPosition(event3), 2);
+// test for isFull
+TEST(UnifiedQueueTest, isFullTest) {
+    UnifiedQueue<Event, compareEvent> queue(10);
+    EXPECT_EQ(queue.isFull(), false);
 }
 
-TEST(QueueTest, DequeueEmptyQueue) {
-  CombinedQueue queue(3);
+// test for capacity
+TEST(UnifiedQueueTest, capacityTest) {
+    UnifiedQueue<Event, compareEvent> queue(10);
+    EXPECT_EQ(queue.capacity(), 10);
+}
 
-  EXPECT_THROW(queue.dequeue(), std::out_of_range);
+// test for size
+TEST(UnifiedQueueTest, sizeTest) {
+    UnifiedQueue<Event, compareEvent> queue(10);
+    EXPECT_EQ(queue.size(), 0);
+    queue.enqueue(r.getEvent());
+    queue.enqueue(r.getEvent());
+    EXPECT_EQ(queue.size(), 2);
+}
+
+// test for debug
+TEST(UnifiedQueueTest, debugTest) {
+    UnifiedQueue<Event, compareEvent> queue(10);
+    queue.enqueue(r.getEvent());
+    queue.enqueue(r.getEvent());
+    queue.debug();
+}
+
+// test for enqueue
+
+// test for dequeue
+
+
+// test for findInsertPosition
+
+
+// test for increamentActiveStart_Index
+
+int main(){
+    testing::InitGoogleTest();
+    return RUN_ALL_TESTS();
 }

@@ -155,7 +155,7 @@ public:
     }
 
     // enqueue the value
-    void enqueue(Event value) {
+    void enqueue(T value) {
         // increment freeStart_ index first for ABA. 
         // store freeStart_ index in a variable and use it in the function and then pass it next
         // this changes
