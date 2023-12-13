@@ -1,1 +1,1 @@
-./build/bitsets $1
+./build/testingUnified

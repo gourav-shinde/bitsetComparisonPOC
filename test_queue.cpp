@@ -34,14 +34,6 @@ TEST(UnifiedQueueTest, sizeTest) {
     EXPECT_EQ(queue.size(), 2);
 }
 
-// test for debug
-TEST(UnifiedQueueTest, debugTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
-    queue.enqueue(r.getEvent());
-    queue.enqueue(r.getEvent());
-    queue.debug();
-}
-
 // test for enqueue
 
 // test for dequeue
