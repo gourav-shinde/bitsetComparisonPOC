@@ -66,6 +66,9 @@ public:
         else if (freeStart_.load(std::memory_order_relaxed) < activeStart_.load(std::memory_order_relaxed)) {
             queue_size = capacity() - activeStart_.load(std::memory_order_relaxed) + freeStart_.load(std::memory_order_relaxed);
         }
+        else if(activeStart_.load(std::memory_order_relaxed) == freeStart_.load(std::memory_order_relaxed)){
+            return 0;//queue is empty , this is when freeStart_ == activeStart_ == unprocessedStart_
+        }
         else{ // when freeStart_ == activeStart_ (queue is full)
             return queue_.size();
         }
@@ -185,6 +188,11 @@ public:
             std::cout << "Queue is empty, can't remove element." << std::endl;
             return T();
         }
+        if (unprocessedStart_.load(std::memory_order_relaxed) == freeStart_.load(std::memory_order_relaxed)) {
+            std::cout << "Unprocessed Events Empty" << std::endl;
+            return T();
+        }
+        
         T value = queue_[unprocessedStart_.load(std::memory_order_relaxed)];
         unprocessedStart_.store(nextIndex(unprocessedStart_.load(std::memory_order_relaxed)), std::memory_order_relaxed);
         return value;

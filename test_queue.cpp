@@ -10,13 +10,28 @@ RandomEventGenerator r;
 // test for isEmpty
 TEST(UnifiedQueueTest, isEmptyTest) {
     UnifiedQueue<Event, compareEvent> queue(10);
+    queue.debug();
     EXPECT_EQ(queue.isEmpty(), true);
+    queue.enqueue(r.getEvent());
+    queue.debug();
+    EXPECT_EQ(queue.isEmpty(), false);
+    queue.dequeue();
+    queue.increamentActiveStart_Index();//this will increament active start to emulate fossile collection.
+    queue.increamentActiveStart_Index();
+    std::cout<<"hmmm"<<queue.isEmpty()<<std::endl;
+    EXPECT_EQ(queue.isEmpty(), true);
+    queue.debug();
+
 }
 
 // test for isFull
 TEST(UnifiedQueueTest, isFullTest) {
     UnifiedQueue<Event, compareEvent> queue(10);
     EXPECT_EQ(queue.isFull(), false);
+    for(int i = 0; i < 10; i++){
+        queue.enqueue(r.getEvent());
+    }
+    EXPECT_EQ(queue.isFull(), true);
 }
 
 // test for capacity
