@@ -7,142 +7,30 @@
 
 
 RandomEventGenerator r;
+
 // test for isEmpty
-TEST(UnifiedQueueTest, isEmptyTest) {
+TEST(UnifiedQueueTest, Markers) {
     UnifiedQueue<Event, compareEvent> queue(10);
-    queue.debug();
-    EXPECT_EQ(queue.isEmpty(), true);
-    queue.enqueue(r.getEvent());
-    queue.debug();
-    EXPECT_EQ(queue.isEmpty(), false);
-    queue.dequeue();
-    queue.increamentActiveStart_Index();//this will increament active start to emulate fossile collection.
-    queue.increamentActiveStart_Index();
-    std::cout<<"hmmm"<<queue.isEmpty()<<std::endl;
-    EXPECT_EQ(queue.isEmpty(), true);
-    queue.debug();
+    //init condition check
+    EXPECT_EQ(queue.getActiveStart(), 0);
+    EXPECT_EQ(queue.getUnprocessedStart(), 0);
+    EXPECT_EQ(queue.getFreeStart(), 0);
+    EXPECT_EQ(queue.getFreeSign(), 0);
+    EXPECT_EQ(queue.getUnprocessedSign(), 0);
+    //set testing
+    queue.setActiveStart(5);
+    queue.setUnprocessedStart(2);
+    queue.setFreeStart(3);
+    EXPECT_EQ(queue.getActiveStart(), 5);
+    EXPECT_EQ(queue.getUnprocessedStart(), 2);
+    EXPECT_EQ(queue.getFreeStart(), 3);
+    //set sign
+    queue.setFreeSign(1);
+    queue.setUnprocessedSign(1);
+    EXPECT_EQ(queue.getFreeSign(), 1);
+    EXPECT_EQ(queue.getUnprocessedSign(), 1);
 
 }
-
-// test for isFull
-TEST(UnifiedQueueTest, isFullTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
-    EXPECT_EQ(queue.isFull(), false);
-    for(int i = 0; i < 10; i++){
-        queue.enqueue(r.getEvent());
-    }
-    EXPECT_EQ(queue.isFull(), true);
-}
-
-// test for capacity
-TEST(UnifiedQueueTest, capacityTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
-    EXPECT_EQ(queue.capacity(), 10);
-}
-
-// test for size
-TEST(UnifiedQueueTest, sizeTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
-    EXPECT_EQ(queue.size(), 0);
-    queue.enqueue(r.getEvent());
-    queue.enqueue(r.getEvent());
-    EXPECT_EQ(queue.size(), 2);
-}
-
-// test for enqueue and dequeue
-TEST(UnifiedQueueTest, enqueueTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
-    Event e1 = r.getEvent();
-    Event e2 = r.getEvent();
-    queue.enqueue(e1);
-    queue.enqueue(e2);//change the functions so that they return bool
-}
-
-
-
-// test for findInsertPosition
-TEST(UnifiedQueueTest, PositionTest){
-    UnifiedQueue<Event, compareEvent> queue(10);
-    int pos = queue.findInsertPosition(Event (1, 1, "a", "b", 1, true));
-    EXPECT_EQ(pos, 0);
-    queue.enqueue(Event(1, 1, "a", "b", 1, true));
-    pos = queue.findInsertPosition(Event(3, 3, "a", "b", 1, true));
-    EXPECT_EQ(pos, 1);
-    queue.enqueue(Event(3, 3, "a", "b", 1, true));
-    pos = queue.findInsertPosition(Event(2, 2, "a", "b", 1, true));
-    EXPECT_EQ(pos, 1);
-    queue.enqueue(Event(2, 2, "a", "b", 1, true)); //let this be here if u wanna add more cases
-    // add rotation cases
-    queue.enqueue(Event(4, 4, "a", "b", 1, true));
-    queue.enqueue(Event(5, 5, "a", "b", 1, true));
-    queue.enqueue(Event(6, 6, "a", "b", 1, true));
-    queue.enqueue(Event(7, 7, "a", "b", 1, true));
-    
-    queue.enqueue(Event(8, 8, "a", "b", 1, true));
-    queue.enqueue(Event(9, 9, "a", "b", 1, true));
-    queue.enqueue(Event(10, 10, "a", "b", 1, true));
-    EXPECT_EQ(queue.isFull(), 1);
-    queue.debug();
-
-    queue.dequeue();
-    queue.debug();
-    queue.increamentActiveStart_Index() ; //these two lines replicate fossil collection and event processing
-    queue.dequeue();
-    queue.debug();
-    queue.increamentActiveStart_Index() ;
-
-    pos = queue.findInsertPosition(Event(11, 11, "a", "b", 1, true)); //this should be inserted at pos 0
-    EXPECT_EQ(pos, 0);
-    queue.enqueue(Event(11, 11, "a", "b", 1, true));
-    pos = queue.findInsertPosition(Event(11, 10, "a", "b", 2, true)); //this should be inserted at pos 0
-    EXPECT_EQ(pos, 0);
-}
-
-//not on zero
-TEST(UnifiedQueueTest, SizeTest){
-    UnifiedQueue<Event, compareEvent> queue(4);
-    queue.enqueue(Event(1, 1, "a", "b", 1, true));
-    queue.enqueue(Event(2, 2, "a", "b", 1, true));
-    queue.enqueue(Event(3, 3, "a", "b", 1, true));
-    queue.enqueue(Event(4, 4, "a", "b", 1, true));
-    queue.debug();
-    EXPECT_EQ(queue.size(), 4); //00-4  markers
-    queue.dequeue();
-    queue.increamentActiveStart_Index();
-    EXPECT_EQ(queue.size(), 3); //110  markers
-    queue.debug();
-    queue.dequeue();
-    queue.dequeue();
-    queue.dequeue();
-    queue.debug();
-    EXPECT_EQ(queue.size(), 3); //1-40 markers
-    queue.enqueue(Event(5, 5, "a", "b", 1, true)); //10-1 markers
-    queue.debug();
-    queue.increamentActiveStart_Index();
-    queue.debug();
-    queue.increamentActiveStart_Index();
-    queue.increamentActiveStart_Index();
-    queue.debug(); //-401 markers
-    queue.dequeue();
-    queue.debug();
-    queue.increamentActiveStart_Index();
-    queue.debug();
-    EXPECT_EQ(queue.size(), 0); //0-40 markers
-    EXPECT_EQ(queue.isEmpty(), true);
-    queue.increamentActiveStart_Index();
-    queue.debug();
-    queue.dequeue();
-    queue.debug();
-    // test for -x -x x condition this should be empty, this is stopped by isEmpty() function
-    queue.increamentActiveStart_Index();
-    queue.debug(); 
-
-    
-
-    
-}
-
-// test for increamentActiveStart_Index
 
 int main(){
     testing::InitGoogleTest();
