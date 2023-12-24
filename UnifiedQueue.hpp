@@ -4,6 +4,10 @@
 #include <cmath>
 #include <stdexcept>
 
+//TODO
+//change active -ve pointer
+//bitmask tthe markers together in unsigned int 32 bits. refer to notes.
+
 // T is the type of the elements in the queue
 // comparator is function that compare_s two elements of type T
 // and returns true if the first element is smaller than the second
@@ -18,6 +22,10 @@ private:
     std::atomic<int> unprocessedStart_; // start of unprocessedStart_ events
     std::atomic<int> freeStart_;        // next available index, start of free space  rename to freespaceStart
 
+
+    //unprocessed/free  11 bits
+    //active 10 bits
+    //
     comparator compare_;
 
 public:
@@ -201,6 +209,7 @@ public:
         }
         //check if freeStart+1 == activeStart, if then freeStart = -(freeStart++), else freeStart++
         //do modulo on freeStart when doing the insert.
+        //do this first, but checks go first
         if (nextIndex(freeStart_.load(std::memory_order_relaxed)) == activeStart_.load(std::memory_order_relaxed)) {
             freeStart_.store(-(freeStart_.load(std::memory_order_relaxed)+1), std::memory_order_relaxed);
         }

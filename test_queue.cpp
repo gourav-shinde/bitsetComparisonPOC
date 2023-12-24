@@ -133,6 +133,11 @@ TEST(UnifiedQueueTest, SizeTest){
     queue.debug();
     queue.dequeue();
     queue.debug();
+    // test for -x -x x condition this should be empty, this is stopped by isEmpty() function
+    queue.increamentActiveStart_Index();
+    queue.debug(); 
+
+    
 
     
 }
@@ -180,3 +185,30 @@ int main(){
 
 // if unprocessed start becomes == freestart then -ve it, to show it is empty.
 // if active start becomes == unprocessed stat then -ve it to show it is empty
+
+
+// 330
+
+// 0->1
+// a3 compare 1, if equal t
+
+// save free to locale_t
+// increament local free, compare and swap against activeStart, if they are equal then -x 
+
+// no rotation
+// 000
+// 003
+// 023
+// 223
+
+
+// rotation
+// 220
+// 221
+// 22-2 queue is full and full of unprocessed
+// 23-2
+// 20-2
+// 21-2
+// 2-2-2 queue is full and full of processed.
+
+
