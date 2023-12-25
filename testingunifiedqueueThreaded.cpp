@@ -22,7 +22,7 @@ void do_random_work(UnifiedQueue<Event, compareEvent> *queue){
         }
         else{
             queue->dequeue(); //to emulate process event
-            queue->increamentActiveStart_Index() ;//to emulate fossile collection
+            queue->increamentActiveStart() ;//to emulate fossile collection
         }
     }
     
