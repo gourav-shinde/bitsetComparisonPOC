@@ -135,7 +135,8 @@ public:
         std::cout << " unprocessedSign: " << getUnprocessedSign();
         std::cout << " unprocessedStart: " << getUnprocessedStart();
         std::cout << " freeSign: " << getFreeSign();
-        std::cout << " freeStart: " << getFreeStart() << std::endl;
+        std::cout << " freeStart: " << getFreeStart();
+        std::cout << " size: " << size() << std::endl;
 
         int i = getUnprocessedStart();
         if(!getUnprocessedSign()){
@@ -316,6 +317,7 @@ public:
 
 
     //this is done
+    //change to use compare and swap
     T dequeue(){
         //checks first
         if (isEmpty()){
@@ -342,6 +344,7 @@ public:
     }
 
     //this is done 
+    //change to use compare and swap
     bool increamentActiveStart(){
         //checks first
         if (isEmpty()){
@@ -349,11 +352,11 @@ public:
             std::cout << "Queue is empty" << std::endl;
             return false;
         }
-        
-        if(getActiveStart() == getFreeStart()){
+        if(getActiveStart() == getUnprocessedStart()){
             std::cout << "Active Zone is Empty" << std::endl;
             return false;
         }
+        setFreeSign(0);
         setActiveStart(nextIndex(getActiveStart()));
         return true;
     }
