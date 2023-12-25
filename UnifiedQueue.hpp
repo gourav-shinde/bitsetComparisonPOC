@@ -18,6 +18,7 @@ private:
     std::vector<T> queue_;
     //1 bit unprocessedSign, 10 bits activeStart_, 1bit unprocessedSign, 10 bits unprocessedStart_, 1 bit freeSign, 10 bits freeStart_
     std::atomic<uint32_t> marker_; //test with this datatype
+    comparator compare_;
 public:
     UnifiedQueue(uint16_t capacity=1024){
         if(capacity > 1024){
@@ -102,15 +103,9 @@ public:
         return (index + 1) % capacity();
     }
 
-    //enqueue needs this 4 functions
-    uint32_t binarySearch(T element, uint32_t low, uint32_t high);
-    uint32_t findInsertPosition(T element, uint32_t low, uint32_t high);
-    void shiftElements(uint32_t start, uint32_t end);
-    bool enqueue(T element);
-
     bool isEmpty(){
         uint32_t marker = marker_.load(std::memory_order_relaxed);
-        if(!FreeSign(marker) && ActiveStart(marker) == getFreeStart(marker))
+        if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker))
             return true;
         return false;
     }
@@ -128,28 +123,26 @@ public:
         }
         if(getFreeStart() > getActiveStart()){
             return getFreeStart() - getActiveStart();
+        }
         if(getFreeStart() < getActiveStart()){
             return capacity() - getActiveStart() + getFreeStart();
         }
+        return INT16_MAX;// some other condition i do not know of
     }
-    
-    T dequeue();
-
-    bool increamentActiveStart(); //for fossil collection
 
     void debug(){
-        std::cout << "activeStart: " << getActiveStart() << std::endl;
-        std::cout << "unprocessedSign: " << getUnprocessedSign() << std::endl;
-        std::cout << "unprocessedStart: " << getUnprocessedStart() << std::endl;
-        std::cout << "freeSign: " << getFreeSign() << std::endl;
-        std::cout << "freeStart: " << getFreeStart() << std::endl;
+        std::cout << "activeStart: " << getActiveStart();
+        std::cout << " unprocessedSign: " << getUnprocessedSign();
+        std::cout << " unprocessedStart: " << getUnprocessedStart();
+        std::cout << " freeSign: " << getFreeSign();
+        std::cout << " freeStart: " << getFreeStart() << std::endl;
 
         int i = getUnprocessedStart();
         if(!getUnprocessedSign()){
         do {
             std::cout << queue_[i].receiveTime_ << " ";
             i = nextIndex(i);
-        } while (i != getValidIndex(getFreeStart()));
+        } while (i != getFreeStart());
         std::cout << std::endl;
         }
         else{
@@ -164,7 +157,7 @@ public:
 
     //getValues from Marker
     
-    uint32_t ActiveIndex(uint32_t marker){
+    uint32_t ActiveStart(uint32_t marker){
         return (marker & 0x3FFC0000) >> 18;
     }
 
@@ -183,4 +176,188 @@ public:
     uint32_t FreeStart(uint32_t marker){
         return (marker & 0x0000003F);
     }
+
+    //setValues for Marker
+
+    //setFreeStart
+    void setFreeStartMarker(uint32_t &marker, uint32_t start){
+        marker &= 0xFFFFFFC0;
+        marker |= start;
+    }
+
+    //setfreeSign
+    void setFreeSignMarker(uint32_t &marker, bool sign){
+        if(sign){
+            marker |= 0x40000000;
+        }else{
+            marker &= 0xBFFFFFFF;
+        }
+    }
+
+    //setunprocessedSign
+    void setUnprocessedSignMarker(uint32_t &marker, bool sign){
+        if(sign){
+            marker |= 0x80000000;
+        }else{
+            marker &= 0x7FFFFFFF;
+        }
+    }
+
+    //setActiveStart
+    void setActiveStartMarker(uint32_t &marker, uint32_t start){
+        marker &= 0xC003FFFF;
+        marker |= (start << 18);
+    }
+
+    //setUnprocessedStart
+    void setUnprocessedStartMarker(uint32_t &marker, uint32_t start){
+        marker &= 0xFFFFC03F;
+        marker |= (start << 6);
+    }
+
+    // main functions
+
+    //no checks for valid indexes is made here as it should be done by the caller
+
+    uint32_t binarySearch(T element, uint32_t low, uint32_t high){
+        uint32_t mid;
+
+        // This will never trigger, as this condition is checked in the parent function
+        // if (isEmpty())
+        //     return getFreeStart();
+
+        while (low < high) {
+            mid = ceil((low + high) / 2);
+
+            if (this->compare_(queue_[mid], element)) {
+                low = (mid + 1) % capacity();
+            }
+            else {
+                high = (mid) % capacity(); // very good chance for infinite loop
+            }
+        }
+
+        return (low) % capacity();
+    }
+
+    //no checks for valid indexes is made here as it should be done by the caller
+    //low: activeStart_
+    //high: freeStart_
+
+    uint32_t findInsertPosition(T element, uint32_t low, uint32_t high){
+        
+        //This will never trigger, as this condition is checked in the parent function
+        // if (isEmpty())
+        //     return freeStart_.load(std::memory_order_relaxed);
+
+        // when there is no rotation in queue
+        if (low < high) {
+            return binarySearch(element, low, high);
+        }
+        // rotation i.e fossileStart_ < activeStart_
+        else {
+            if (compare_(element, queue_[capacity() - 1])) {
+                return binarySearch(element, low, capacity() - 1);
+            }
+            else {
+                return binarySearch(element, 0, high);
+            }
+        }
+    }
+
+
+    //shift elements from start to end by 1 position to the right
+    //no checks for valid indexes is made here as it should be done by the caller
+    //Discuss this as it will have ABA problem across threads
+    void shiftElements(uint32_t start, uint32_t end) {
+        uint32_t i = end;
+        while (i != start) {
+            queue_[i] = queue_[prevIndex(i)];
+            i = prevIndex(i);
+        }
+    }
+
+
+    bool enqueue(T element){
+        //checks first
+        if (isFull()){
+            //throw message
+            std::cout << "Queue is full" << std::endl;
+            return false;
+        }
+
+        uint32_t marker = marker_.load(std::memory_order_relaxed);
+        uint32_t markerCopy = marker;
+        if(nextIndex(FreeStart(marker)) == ActiveStart(marker)){//queue will become full after this insert
+            //set freeSign_ to 1
+            setFreeSignMarker(marker,1);
+        }
+        setUnprocessedSignMarker(marker, 0);
+        setFreeStartMarker(marker, nextIndex(FreeStart(marker)));
+        std::cout<<"freestart: "<<FreeStart(marker)<<std::endl;
+        std::cout<<"freestartCopy: "<<FreeStart(markerCopy)<<std::endl;
+        
+        //make sure marker doesnt change for doing 1+1 operation using compare and swap
+        while (marker_.compare_exchange_weak(
+                   markerCopy, marker,
+                   std::memory_order_release, std::memory_order_relaxed)){
+            if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker)){
+                queue_[ActiveStart(markerCopy)] = element;
+                std::cout<<"called empty one"<<std::endl;
+                debug();
+            }
+            else{
+                int insertPos = findInsertPosition(element, ActiveStart(markerCopy), FreeStart(markerCopy));
+                shiftElements(insertPos, FreeStart(markerCopy));
+                queue_[insertPos] = element;
+            }
+        }
+        std::cout<<"mainfreestart: "<<getFreeStart()<<std::endl;
+        return true;
+    }
+
+
+    //this is done
+    T dequeue(){
+        //checks first
+        if (isEmpty()){
+            //throw message
+            std::cout << "Queue is empty" << std::endl;
+            return T();
+        }
+        if(getUnprocessedSign()){
+            //throw message
+            std::cout << "unprocessed Queue is empty" << std::endl;
+            return T();
+        }
+        T element = queue_[getUnprocessedStart()];
+        
+        if(nextIndex(getUnprocessedStart()) == getFreeStart()){
+            //set unprocessedSign_ to 1
+            setUnprocessedSign(1);
+            
+        }
+        setUnprocessedStart(nextIndex(getUnprocessedStart()));
+
+        return element;
+        
+    }
+
+    //this is done 
+    bool increamentActiveStart(){
+        //checks first
+        if (isEmpty()){
+            //throw message
+            std::cout << "Queue is empty" << std::endl;
+            return false;
+        }
+        
+        if(getActiveStart() == getFreeStart()){
+            std::cout << "Active Zone is Empty" << std::endl;
+            return false;
+        }
+        setActiveStart(nextIndex(getActiveStart()));
+        return true;
+    }
+
 };

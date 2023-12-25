@@ -4,9 +4,7 @@
 
 UnifiedQueue<Event,compareEvent> queue(10);
     
-void location(Event event){
-    std::cout<<queue.findInsertPosition(event)<<std::endl;
-};
+
 
 int main(){
     
@@ -25,60 +23,11 @@ int main(){
     Event event11(1, 9, "a", "b", 1, true);
 
     queue.debug();
-    std::cout<<"debug okay";
     queue.enqueue(event1);
-    std::cout<<"enqueue okay";
     queue.debug();
-    
-    // queue.debug();
-    
     queue.enqueue(event2);
     queue.debug();
-    
-    queue.enqueue(event4);
-    queue.debug();
-    
     queue.enqueue(event3);
-    queue.debug();
-    queue.enqueue(event6);
-    queue.debug();
-
-
-    queue.enqueue(event5);
-    queue.debug();
-
-    queue.dequeue(); //increments unprocessedStart
-    queue.increamentActiveStart_Index() ;
-    queue.debug();
-
-    queue.dequeue();
-    queue.increamentActiveStart_Index() ;
-    queue.debug(); 
-
-    queue.enqueue(event2);
-    queue.debug();
-    
-    queue.enqueue(event4);
-    queue.debug();
-
-    queue.enqueue(event7);
-    queue.debug();
-
-    queue.enqueue(event8);
-    queue.debug();
-
-    queue.enqueue(event9);
-    queue.debug();
-
-    queue.enqueue(event11); //queue should be full
-    queue.debug();
-
-
-    queue.dequeue();
-    queue.increamentActiveStart_Index() ;
-    queue.debug();
-
-    queue.enqueue(event11);
     queue.debug();
     
 
