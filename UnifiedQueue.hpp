@@ -294,8 +294,6 @@ public:
         }
         setUnprocessedSignMarker(marker, 0);
         setFreeStartMarker(marker, nextIndex(FreeStart(marker)));
-        std::cout<<"freestart: "<<FreeStart(marker)<<std::endl;
-        std::cout<<"freestartCopy: "<<FreeStart(markerCopy)<<std::endl;
         
         //make sure marker doesnt change for doing 1+1 operation using compare and swap
         while (marker_.compare_exchange_weak(
@@ -303,7 +301,7 @@ public:
                    std::memory_order_release, std::memory_order_relaxed)){
             if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker)){
                 queue_[ActiveStart(markerCopy)] = element;
-                std::cout<<"called empty one"<<std::endl;
+                
                 debug();
             }
             else{
@@ -312,7 +310,7 @@ public:
                 queue_[insertPos] = element;
             }
         }
-        std::cout<<"mainfreestart: "<<getFreeStart()<<std::endl;
+
         return true;
     }
 
