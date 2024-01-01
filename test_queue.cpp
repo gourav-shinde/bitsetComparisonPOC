@@ -270,7 +270,131 @@ TEST(UnifiedQueueTest, ABA2){
     t3.join();
     queue.debug();
     EXPECT_EQ(queue.getUnprocessedStart(), 10);
-    EXPECT_EQ(queue.getFreeStart(), 10);
+    EXPECT_EQ(queue.getFreeStart(), 20);
+}
+
+void fossil(UnifiedQueue<Event, compareEvent> *queue){
+    sleep(1);
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+}
+
+void fossil2(UnifiedQueue<Event, compareEvent> *queue){
+    queue->increamentActiveStart();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+}
+
+TEST(UnifiedQueue,ABA3){
+    UnifiedQueue<Event, compareEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(8, 8, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(10, 10, "a", "b", 1, true));
+    queue.enqueue(Event(11, 11, "a", "b", 1, true));
+    queue.enqueue(Event(12, 12, "a", "b", 1, true));
+    queue.enqueue(Event(21, 21, "a", "b", 1, true));
+    queue.enqueue(Event(22, 22, "a", "b", 1, true));
+    queue.enqueue(Event(23, 23, "a", "b", 1, true));
+    queue.enqueue(Event(24, 24, "a", "b", 1, true));
+    // dequeue *10
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    
+    std::thread t1(enqueue2, &queue);
+    std::thread t2(fossil, &queue);
+    std::thread t3(fossil2, &queue);
+    t2.join();
+    t1.join();
+    t3.join();
+    queue.debug();
+    EXPECT_EQ(queue.getUnprocessedStart(), 10);
+    EXPECT_EQ(queue.getFreeStart(), 20);
+    EXPECT_EQ(queue.getActiveStart(), 10);
+}
+
+TEST(UnifiedQueue,ThreadTest){
+    UnifiedQueue<Event, compareEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(8, 8, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(10, 10, "a", "b", 1, true));
+    queue.enqueue(Event(11, 11, "a", "b", 1, true));
+    queue.enqueue(Event(12, 12, "a", "b", 1, true));
+    queue.enqueue(Event(21, 21, "a", "b", 1, true));
+    queue.enqueue(Event(22, 22, "a", "b", 1, true));
+    queue.enqueue(Event(23, 23, "a", "b", 1, true));
+    queue.enqueue(Event(24, 24, "a", "b", 1, true));
+    
+    
+    std::thread t1(enqueue2, &queue);
+    std::thread t2(enqueue, &queue);
+    std::thread t3(fossil2, &queue); //doesnt change a thing
+    t2.join();
+    t1.join();
+    t3.join();
+    queue.debug();
+    EXPECT_EQ(queue.getUnprocessedStart(), 0);
+    EXPECT_EQ(queue.getFreeStart(), 25);
+    EXPECT_EQ(queue.getActiveStart(), 0);
+    dequeue(&queue);
+    dequeue2(&queue);
+
+    std::thread t4(dequeue, &queue);
+    std::thread t5(dequeue2, &queue);
+    std::thread t6(dequeue, &queue); 
+    t4.join();
+    t5.join();
+    t6.join();
+    dequeue(&queue); //unprocess queue is empty
+    EXPECT_EQ(queue.getUnprocessedStart(), 25);
+    EXPECT_EQ(queue.getUnprocessedSign(), 1);
+    EXPECT_EQ(queue.getFreeStart(), 25);
+
+    std::thread t7(enqueue, &queue);
+    std::thread t8(enqueue2, &queue);
+    std::thread t9(fossil, &queue); 
+    std::thread t10(fossil2, &queue); 
+    t7.join();
+    t8.join();
+    t9.join();
+    t10.join();
+
+    EXPECT_EQ(queue.getUnprocessedStart(), 25);
+    EXPECT_EQ(queue.getUnprocessedSign(), 0);
+    EXPECT_EQ(queue.getFreeStart(), 4);
+    EXPECT_EQ(queue.getActiveStart(), 10);
+
+    queue.debug();
+
 }
 
 
