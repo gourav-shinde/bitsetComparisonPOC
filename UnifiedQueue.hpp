@@ -4,10 +4,10 @@
 #include <cmath>
 #include <stdexcept>
 
-#ifdef GTEST_FOUND
+
 #include <chrono>
 #include <thread>
-#endif
+
 
 
 // T is the type of the elements in the queue
@@ -284,53 +284,56 @@ public:
 
     // we are not handling out of order elements in this queue.
     bool enqueue(T element){
-        //checks first
-        if (isFull()){
-            //throw message
-            std::cout << "Queue is full" << std::endl;
-            // std::__throw_bad_exception();
-            return false;
-        }
+        bool success = false;
+        while(!success){
+            //checks first
+            if (isFull()){
+                //throw message
+                std::cout << "Queue is full" << std::endl;
+                // std::__throw_bad_exception();
+                return false;
+            }
 
-        uint32_t marker = marker_.load(std::memory_order_relaxed);
-        uint32_t markerCopy = marker;
-        if(nextIndex(FreeStart(marker)) == ActiveStart(marker)){//queue will become full after this insert
-            //set freeSign_ to 1
-            setFreeSignMarker(marker,1);
-        }
-        setUnprocessedSignMarker(marker, 0);
-        setFreeStartMarker(marker, nextIndex(FreeStart(marker)));
+            uint32_t marker = marker_.load(std::memory_order_relaxed);
+            uint32_t markerCopy = marker;
+            if(nextIndex(FreeStart(marker)) == ActiveStart(marker)){//queue will become full after this insert
+                //set freeSign_ to 1
+                setFreeSignMarker(marker,1);
+            }
+            setUnprocessedSignMarker(marker, 0);
+            setFreeStartMarker(marker, nextIndex(FreeStart(marker)));
 
-        //run follwing code when running gtest, this adds a delay so threads collide making 
-        //compare and swap fail
-        #ifdef GTEST_FOUND
-            std::cout<<"called "<<element.receiveTime_<<std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        #endif
-        
-        
-        //make sure marker doesnt change for doing 1+1 operation using compare and swap
-        while (marker_.compare_exchange_weak(
-                   markerCopy, marker,
-                   std::memory_order_release, std::memory_order_relaxed)){
-            //FOR OUT OF ORDER LOGIC
-            // if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker)){//queue is empty
-            //     queue_[ActiveStart(markerCopy)] = element;
-            // }
-            // else{
-            //     int insertPos = findInsertPosition(element, ActiveStart(markerCopy), FreeStart(markerCopy));
-            //     shiftElements(insertPos, FreeStart(markerCopy));
-            //     queue_[insertPos] = element;
-            // }
+            //run follwing code when running gtest, this adds a delay so threads collide making 
+            //compare and swap fail
             #ifdef GTEST_FOUND
-                std::cout<<"Inserted "<<element.receiveTime_<<std::endl;             
+                std::cout<<"called "<<element.receiveTime_<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             #endif
-            queue_[FreeStart(markerCopy)] = element;
+            
+            //make sure marker doesnt change for doing 1+1 operation using compare and swap
+        
+            while (marker_.compare_exchange_weak(
+                    markerCopy, marker,
+                    std::memory_order_release, std::memory_order_relaxed)){
+                //FOR OUT OF ORDER LOGIC
+                // if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker)){//queue is empty
+                //     queue_[ActiveStart(markerCopy)] = element;
+                // }
+                // else{
+                //     int insertPos = findInsertPosition(element, ActiveStart(markerCopy), FreeStart(markerCopy));
+                //     shiftElements(insertPos, FreeStart(markerCopy));
+                //     queue_[insertPos] = element;
+                // }
+                #ifdef GTEST_FOUND
+                    std::cout<<"Inserted "<<element.receiveTime_<<" at "<<FreeStart(markerCopy)<<std::endl;  
+                                
+                #endif
+                queue_[FreeStart(markerCopy)] = element;
+                success = true;
+            }
         }
-        // add a delay, so the threads alternate in such a way that they do not collide
-        //, especially shift elements (SCRAPED)
-
-        // we just insert it at freeStart_, this will lead to more rollbacks.
+           
+        
 
         return true;
     }

@@ -199,22 +199,52 @@ void enqueue(UnifiedQueue<Event, compareEvent> *queue){
 
 }
 
-void dequeue(UnifiedQueue<Event, compareEvent> *queue){
+void enqueue2(UnifiedQueue<Event, compareEvent> *queue){
     queue->enqueue(Event(10, 10, "a", "b", 1, true));
     // queue->dequeue();
     sleep(1);
     queue->enqueue(Event(11, 11, "a", "b", 1, true));
+    queue->enqueue(Event(13, 13, "a", "b", 1, true));
+    queue->enqueue(Event(14, 14, "a", "b", 1, true));
+    
     // queue->dequeue();
 }
 
 TEST(UnifiedQueueTest, ABA1){
-    #define NORMAL 1
     UnifiedQueue<Event, compareEvent> queue(10);
     queue.enqueue(Event(12, 12, "a", "b", 1, true)); //prepopulate
     std::thread t1(enqueue, &queue);
-    std::thread t2(dequeue, &queue);
+    std::thread t2(enqueue2, &queue);
     t1.join();
     t2.join();
+    queue.debug();
+    EXPECT_EQ(queue.size(), 10);
+}
+
+void dequeue(UnifiedQueue<Event, compareEvent> *queue){
+    sleep(1);
+    queue->dequeue();
+    queue->dequeue();
+    queue->dequeue();
+    queue->dequeue();
+    queue->dequeue();
+}
+
+
+
+TEST(UnifiedQueueTest, ABA2){
+    UnifiedQueue<Event, compareEvent> queue(10);
+    //prepopulate
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    
+    std::thread t1(enqueue2, &queue);
+    std::thread t2(dequeue, &queue);
+    t2.join();
+    t1.join();
     queue.debug();
 }
 

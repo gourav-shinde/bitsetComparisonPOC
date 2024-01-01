@@ -15,6 +15,7 @@ project (UNIFIED_QUEUE)
 # add test
 add_executable(unifiedgtest test_queue.cpp)
 target_link_libraries(unifiedgtest gtest)
+target_compile_definitions(unifiedgtest PRIVATE GTEST_FOUND)
 add_custom_command(TARGET unifiedgtest
                     POST_BUILD 
                     COMMAND ${CMAKE_COMMAND} -E echo "Running your_script.sh"
