@@ -4,10 +4,14 @@
 #include <cmath>
 #include <stdexcept>
 
+#ifdef GTEST_FOUND
+#include <chrono>
+#include <thread>
+#endif
 
 
 // T is the type of the elements in the queue
-// comparator is function that compare_s two elements of type T
+// comparator is function that compare_s two elements of type T (doesnt sort anymore)
 // and returns true if the first element is smaller than the second
 // T: queue_Type
 // comparator: compare_ function which return A<B
@@ -16,9 +20,9 @@ class UnifiedQueue
 {
 private:
     std::vector<T> queue_;
-    //1 bit unprocessedSign, 10 bits activeStart_, 1bit unprocessedSign, 10 bits unprocessedStart_, 1 bit freeSign, 10 bits freeStart_
+    // 10 bits activeStart_, 1bit unprocessedSign, 10 bits unprocessedStart_, 1 bit freeSign, 10 bits freeStart_
     std::atomic<uint32_t> marker_; //test with this datatype
-    comparator compare_;
+    comparator compare_; //currently not  used, as we are not sorting anymore
 public:
     UnifiedQueue(uint16_t capacity=1024){
         if(capacity > 1024){
@@ -278,12 +282,13 @@ public:
         }
     }
 
-
+    // we are not handling out of order elements in this queue.
     bool enqueue(T element){
         //checks first
         if (isFull()){
             //throw message
             std::cout << "Queue is full" << std::endl;
+            // std::__throw_bad_exception();
             return false;
         }
 
@@ -295,22 +300,37 @@ public:
         }
         setUnprocessedSignMarker(marker, 0);
         setFreeStartMarker(marker, nextIndex(FreeStart(marker)));
+
+        //run follwing code when running gtest, this adds a delay so threads collide making 
+        //compare and swap fail
+        #ifdef GTEST_FOUND
+            std::cout<<"called "<<element.receiveTime_<<std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        #endif
+        
         
         //make sure marker doesnt change for doing 1+1 operation using compare and swap
         while (marker_.compare_exchange_weak(
                    markerCopy, marker,
                    std::memory_order_release, std::memory_order_relaxed)){
-            if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker)){
-                queue_[ActiveStart(markerCopy)] = element;
-                
-                debug();
-            }
-            else{
-                int insertPos = findInsertPosition(element, ActiveStart(markerCopy), FreeStart(markerCopy));
-                shiftElements(insertPos, FreeStart(markerCopy));
-                queue_[insertPos] = element;
-            }
+            //FOR OUT OF ORDER LOGIC
+            // if(!FreeSign(marker) && ActiveStart(marker) == FreeStart(marker)){//queue is empty
+            //     queue_[ActiveStart(markerCopy)] = element;
+            // }
+            // else{
+            //     int insertPos = findInsertPosition(element, ActiveStart(markerCopy), FreeStart(markerCopy));
+            //     shiftElements(insertPos, FreeStart(markerCopy));
+            //     queue_[insertPos] = element;
+            // }
+            #ifdef GTEST_FOUND
+                std::cout<<"Inserted "<<element.receiveTime_<<std::endl;             
+            #endif
+            queue_[FreeStart(markerCopy)] = element;
         }
+        // add a delay, so the threads alternate in such a way that they do not collide
+        //, especially shift elements (SCRAPED)
+
+        // we just insert it at freeStart_, this will lead to more rollbacks.
 
         return true;
     }

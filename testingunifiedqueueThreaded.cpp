@@ -27,7 +27,9 @@ void do_random_work(UnifiedQueue<Event, compareEvent> *queue){
     }
     
 }
-
+//create 2 threads.
+//thread 1: allow rt to 1 to 20
+//thread 2: allow rt to 18 to 40
 int main(){
     UnifiedQueue<Event, compareEvent> queue(64);
     std::thread t1(do_work, &queue);
