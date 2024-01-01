@@ -4,6 +4,7 @@
 #include "UnifiedQueue.hpp"
 #include "randomEventGenerator.hpp"
 #include <thread>
+#include <chrono>
 RandomEventGenerator r;
 
 // // test for isEmpty
@@ -230,22 +231,46 @@ void dequeue(UnifiedQueue<Event, compareEvent> *queue){
     queue->dequeue();
 }
 
+void dequeue2(UnifiedQueue<Event, compareEvent> *queue){
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    queue->dequeue();
+    queue->dequeue();
+    queue->dequeue();
+}
+
 
 
 TEST(UnifiedQueueTest, ABA2){
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent> queue(30);
     //prepopulate
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
     queue.enqueue(Event(3, 3, "a", "b", 1, true));
     queue.enqueue(Event(4, 4, "a", "b", 1, true));
     queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(8, 8, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(10, 10, "a", "b", 1, true));
+    queue.enqueue(Event(11, 11, "a", "b", 1, true));
+    queue.enqueue(Event(12, 12, "a", "b", 1, true));
+    queue.enqueue(Event(21, 21, "a", "b", 1, true));
+    queue.enqueue(Event(22, 22, "a", "b", 1, true));
+    queue.enqueue(Event(23, 23, "a", "b", 1, true));
+    queue.enqueue(Event(24, 24, "a", "b", 1, true));
     
     std::thread t1(enqueue2, &queue);
     std::thread t2(dequeue, &queue);
+    std::thread t3(dequeue2, &queue);
     t2.join();
     t1.join();
+    t3.join();
     queue.debug();
+    EXPECT_EQ(queue.getUnprocessedStart(), 10);
+    EXPECT_EQ(queue.getFreeStart(), 10);
 }
 
 

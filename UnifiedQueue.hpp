@@ -342,27 +342,47 @@ public:
     //this is done
     //change to use compare and swap
     T dequeue(){
-        //checks first
-        if (isEmpty()){
-            //throw message
-            std::cout << "Queue is empty" << std::endl;
-            return T();
-        }
-        if(getUnprocessedSign()){
-            //throw message
-            std::cout << "unprocessed Queue is empty" << std::endl;
-            return T();
-        }
-        T element = queue_[getUnprocessedStart()];
-        
-        if(nextIndex(getUnprocessedStart()) == getFreeStart()){
-            //set unprocessedSign_ to 1
-            setUnprocessedSign(1);
+        bool success = false;
+        while(!success){
+            //checks first
+            if (isEmpty()){
+                //throw message
+                std::cout << "Queue is empty" << std::endl;
+                return T();
+            }
+            if(getUnprocessedSign()){
+                //throw message
+                std::cout << "unprocessed Queue is empty" << std::endl;
+                return T();
+            }
+
+            uint32_t marker = marker_.load(std::memory_order_relaxed);
+            uint32_t markerCopy = marker;
+            if(nextIndex(UnprocessedStart(marker)) == FreeStart(marker)){
+                //set unprocessedSign_ to 1
+                setUnprocessedSignMarker(marker, 1);
+                
+            }
+            setUnprocessedStartMarker(marker, nextIndex(UnprocessedStart(marker)));
+            T element;
+            #ifdef GTEST_FOUND
+                std::cout<<"dequeue called "<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            #endif
+            while (marker_.compare_exchange_weak(
+                    markerCopy, marker,
+                    std::memory_order_release, std::memory_order_relaxed)){
+                    element = queue_[UnprocessedStart(markerCopy)];
+                    #ifdef GTEST_FOUND
+                        std::cout<<"dequeue success at "<<UnprocessedStart(markerCopy)<<std::endl;
+                    #endif
+                    success = true;
+            }
+            if(success)
+                return element;
             
         }
-        setUnprocessedStart(nextIndex(getUnprocessedStart()));
-
-        return element;
+        return T();
         
     }
 
