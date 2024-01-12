@@ -2,11 +2,12 @@
 
 #include <gtest/gtest.h>
 #include "UnifiedQueue.hpp"
-#include "randomEventGenerator.hpp"
+// #include "EventClass.hpp"
 #include <thread>
 #include <chrono>
-RandomEventGenerator r;
+#include "randomEventGenerator.hpp"
 
+RandomEventGenerator r;
 // test for isEmpty
 TEST(UnifiedQueueTest, Markers) {
     UnifiedQueue<Event, compareEvent> queue(10);
@@ -395,6 +396,86 @@ TEST(UnifiedQueue,ThreadTest){
 
     queue.debug();
 
+}
+
+
+void enqueue3(UnifiedQueue<Event, compareEvent> *queue){
+    queue->enqueue(Event(10, 10, "a", "b", 1, true));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->enqueue(Event(11, 11, "a", "b", 1, true));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->enqueue(Event(12, 12, "a", "b", 1, true));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->enqueue(Event(13, 13, "a", "b", 1, true));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+
+}
+void dequeue3(UnifiedQueue<Event, compareEvent> *queue){
+    queue->dequeue();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+void activezoneFind1(UnifiedQueue<Event, compareEvent> *queue){
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+    // queue->debug();
+    EXPECT_EQ(queue->findInActiveZone(Event(4, 4, "a", "b", 1, true)), true);
+    // queue->debug();
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    EXPECT_EQ(queue->findInActiveZone(Event(4, 4, "a", "b", 1, true)), false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(450));
+    EXPECT_EQ(queue->findInActiveZone(Event(7, 7, "a", "b", 1, true)), true);
+    
+
+}
+
+void fossile3(UnifiedQueue<Event, compareEvent> *queue){
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+    queue->increamentActiveStart();
+}
+
+
+TEST(UnifiedQueue, FindInActiveZone){
+    UnifiedQueue<Event, compareEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.dequeue();
+    queue.dequeue();
+    EXPECT_EQ(queue.findInActiveZone(Event(1, 1, "a", "b", 1, true)), true);
+    queue.increamentActiveStart();
+    EXPECT_EQ(queue.findInActiveZone(Event(1, 1, "a", "b", 1, true)), false);
+    EXPECT_EQ(queue.findInActiveZone(Event(2, 2, "a", "b", 1, true)), true);
+    std::thread t1(enqueue3, &queue);
+    std::thread t2(dequeue3, &queue); 
+    std::thread t3(fossile3, &queue);
+    std::thread t4(activezoneFind1, &queue);
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+
+    queue.debug();
 }
 
 

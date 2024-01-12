@@ -23,6 +23,11 @@ private:
     // 10 bits activeStart_, 1bit unprocessedSign, 10 bits unprocessedStart_, 1 bit freeSign, 10 bits freeStart_
     std::atomic<uint32_t> marker_; //test with this datatype
     comparator compare_; //currently not  used, as we are not sorting anymore
+    class Data: public T{
+        public:
+        Data(T,bool):T(), valid(true){};
+        bool valid;
+    };
 public:
     UnifiedQueue(uint16_t capacity=1024){
         if(capacity > 1024){
@@ -339,8 +344,8 @@ public:
     }
 
 
-    //this is done
-    //change to use compare and swap
+    /// @brief
+    /// @return returns the element at the front of the UnprocessStart
     T dequeue(){
         bool success = false;
         while(!success){
@@ -386,8 +391,7 @@ public:
         
     }
 
-    //this is done 
-    //change to use compare and swap
+    /// @brief fossil collect dummy function
     bool increamentActiveStart(){
         bool success = false;
         //checks first
@@ -420,6 +424,102 @@ public:
             }
         }
         return true;
+    }
+
+
+    /// @brief find the element in queue and return its index, we do recall in this case
+    /// @return returns the index of the element if found else returns -1
+    bool findInActiveZone(T element){
+        bool success = false;
+        bool found = 0;
+        while(!success){
+            if (isEmpty()){
+                //throw message
+                std::cout << "Queue is empty" << std::endl;
+                return false;
+            }
+            if(getActiveStart() == getUnprocessedStart()){ 
+                std::cout << "Active Zone is Empty" << std::endl;
+                return false;
+            }
+            uint32_t marker = marker_.load(std::memory_order_relaxed);
+            uint32_t markerCopy = marker;
+            uint16_t ActiveIndex = ActiveStart(markerCopy);
+            uint16_t UnprocessedStart1 = UnprocessedStart(markerCopy);
+
+            
+            #ifdef GTEST_FOUND
+                std::cout<<"find called "<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            #endif
+            while (marker_.compare_exchange_weak(
+                    markerCopy, marker,
+                    std::memory_order_release, std::memory_order_relaxed)){
+
+                    while(ActiveIndex != UnprocessedStart1){
+                        if(queue_[ActiveIndex] == element){
+                            found = true;
+                            break;
+                        }
+                        ActiveIndex = nextIndex(ActiveIndex);
+                    }
+                    #ifdef GTEST_FOUND
+                        std::cout<<"find success at "<<std::endl;
+                    #endif
+                    success=true;
+                    break;
+            }
+            
+        }
+        return found;
+    }
+
+
+    /// @brief find the element in queue and return its index, we do recall in this case
+    /// @return returns the index of the element if found else returns -1
+    bool findInUnprocessedZone(T element){
+        bool success = false;
+        bool found = 0;
+        while(!success){
+            if (isEmpty()){
+                //throw message
+                std::cout << "Queue is empty" << std::endl;
+                return false;
+            }
+            if(getActiveStart() == getUnprocessedStart()){ 
+                std::cout << "Active Zone is Empty" << std::endl;
+                return false;
+            }
+            uint32_t marker = marker_.load(std::memory_order_relaxed);
+            uint32_t markerCopy = marker;
+            uint16_t UnProcessedStart1 = UnprocessedStart(markerCopy);
+            uint16_t FreeIndex = FreeStart(markerCopy);
+
+            
+            #ifdef GTEST_FOUND
+                std::cout<<"find called "<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            #endif
+            while (marker_.compare_exchange_weak(
+                    markerCopy, marker,
+                    std::memory_order_release, std::memory_order_relaxed)){
+
+                    while(UnProcessedStart1 != FreeIndex){
+                        if(queue_[UnProcessedStart1] == element){
+                            found = true;
+                            break;
+                        }
+                        UnProcessedStart1 = nextIndex(UnProcessedStart1);
+                    }
+                    #ifdef GTEST_FOUND
+                        std::cout<<"find success at "<<std::endl;
+                    #endif
+                    success=true;
+                    break;
+            }  
+        }
+        return found;
+        
     }
 
 };

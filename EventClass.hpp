@@ -27,6 +27,14 @@ struct Event {
               generation_(generation),
               Event2Type_(Event2Type) {
     }
+
+    bool operator== (const Event &other) {
+        return ((this->receiveTime_ == other.receiveTime_)
+                && (this->sendTime_ == other.sendTime_)
+                && (this->sendName_ == other.sendName_)
+                && (this->generation_ == other.generation_)
+                && (this->Event2Type_ == other.Event2Type_));
+    }
 };
 
 // compare two Event2s
