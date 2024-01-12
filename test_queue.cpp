@@ -478,6 +478,69 @@ TEST(UnifiedQueue, FindInActiveZone){
     queue.debug();
 }
 
+void dequeue4(UnifiedQueue<Event, compareEvent> *queue){
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    queue->dequeue();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+//TODO
+void UnprocessedzoneFind1(UnifiedQueue<Event, compareEvent> *queue){
+    EXPECT_EQ(queue->findInUnprocessedZone(Event(3, 3, "a", "b", 1, true)), true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+    // queue->debug();
+    EXPECT_EQ(queue->findInUnprocessedZone(Event(1, 1, "a", "b", 1, true)), false);
+    // queue->debug();
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    EXPECT_EQ(queue->findInUnprocessedZone(Event(4, 4, "a", "b", 1, true)), false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(450));
+    queue->debug();
+    EXPECT_EQ(queue->findInUnprocessedZone(Event(7, 7, "a", "b", 1, true)), true);
+    
+
+}
+
+//TODO
+TEST(UnifiedQueue, FindInUnprocessedZone){
+    UnifiedQueue<Event, compareEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.dequeue();
+    queue.dequeue();
+    EXPECT_EQ(queue.findInActiveZone(Event(1, 1, "a", "b", 1, true)), true);
+    queue.increamentActiveStart();
+    EXPECT_EQ(queue.findInActiveZone(Event(1, 1, "a", "b", 1, true)), false);
+    EXPECT_EQ(queue.findInActiveZone(Event(2, 2, "a", "b", 1, true)), true);
+    std::thread t1(enqueue3, &queue);
+    std::thread t2(dequeue4, &queue); 
+    std::thread t3(fossile3, &queue);
+    std::thread t4(UnprocessedzoneFind1, &queue);
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+
+    queue.debug();
+}
+
+
 
 int main(){
     testing::InitGoogleTest();

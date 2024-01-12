@@ -18,16 +18,29 @@
 template <typename T, typename comparator>
 class UnifiedQueue
 {
+    class Data{
+        public:
+        Data(T data = T(),bool valid=true):data_(data), valid_(valid){};
+        T data_;
+        bool valid_;
+        T getData(){
+            return data_;
+        }
+
+        void invalidate(){
+            valid_ = false;
+        }
+
+        bool isValid(){
+            return valid_;
+        }
+    };
 private:
-    std::vector<T> queue_;
+    std::vector<Data> queue_;
     // 10 bits activeStart_, 1bit unprocessedSign, 10 bits unprocessedStart_, 1 bit freeSign, 10 bits freeStart_
     std::atomic<uint32_t> marker_; //test with this datatype
     comparator compare_; //currently not  used, as we are not sorting anymore
-    class Data: public T{
-        public:
-        Data(T,bool):T(), valid(true){};
-        bool valid;
-    };
+    
 public:
     UnifiedQueue(uint16_t capacity=1024){
         if(capacity > 1024){
@@ -150,7 +163,7 @@ public:
         int i = getUnprocessedStart();
         if(!getUnprocessedSign()){
         do {
-            std::cout << queue_[i].receiveTime_ << " ";
+            std::cout << queue_[i].getData().receiveTime_ << " ";
             i = nextIndex(i);
         } while (i != getFreeStart());
         std::cout << std::endl;
@@ -159,7 +172,7 @@ public:
             std::cout<<"Unprocessed Events Empty"<<std::endl;
         }
         for (auto itr : queue_) {
-            std::cout << itr.receiveTime_ << " ";
+            std::cout << itr.getData().receiveTime_ << " ";
         }
         std::cout << std::endl;
          
@@ -239,7 +252,7 @@ public:
         while (low < high) {
             mid = ceil((low + high) / 2);
 
-            if (this->compare_(queue_[mid], element)) {
+            if (this->compare_(queue_[mid].getData(), element)) {
                 low = (mid + 1) % capacity();
             }
             else {
@@ -266,7 +279,7 @@ public:
         }
         // rotation i.e fossileStart_ < activeStart_
         else {
-            if (compare_(element, queue_[capacity() - 1])) {
+            if (compare_(element, queue_[capacity() - 1].getData())) {
                 return binarySearch(element, low, capacity() - 1);
             }
             else {
@@ -333,7 +346,7 @@ public:
                     std::cout<<"Inserted "<<element.receiveTime_<<" at "<<FreeStart(markerCopy)<<std::endl;  
                                 
                 #endif
-                queue_[FreeStart(markerCopy)] = element;
+                queue_[FreeStart(markerCopy)] = Data(element);
                 success = true;
             }
         }
@@ -377,7 +390,7 @@ public:
             while (marker_.compare_exchange_weak(
                     markerCopy, marker,
                     std::memory_order_release, std::memory_order_relaxed)){
-                    element = queue_[UnprocessedStart(markerCopy)];
+                    element = queue_[UnprocessedStart(markerCopy)].getData();
                     #ifdef GTEST_FOUND
                         std::cout<<"dequeue success at "<<UnprocessedStart(markerCopy)<<std::endl;
                     #endif
@@ -457,7 +470,7 @@ public:
                     std::memory_order_release, std::memory_order_relaxed)){
 
                     while(ActiveIndex != UnprocessedStart1){
-                        if(queue_[ActiveIndex] == element){
+                        if(queue_[ActiveIndex].getData()== element){
                             found = true;
                             break;
                         }
@@ -505,7 +518,7 @@ public:
                     std::memory_order_release, std::memory_order_relaxed)){
 
                     while(UnProcessedStart1 != FreeIndex){
-                        if(queue_[UnProcessedStart1] == element){
+                        if(queue_[UnProcessedStart1].getData() == element){
                             found = true;
                             break;
                         }
