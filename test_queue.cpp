@@ -479,6 +479,7 @@ TEST(UnifiedQueue, FindTests){
     queue.debug();
     queue.dequeue();//this dequeues 11, but its invalid so it gets next element
     queue.debug(); 
+    EXPECT_EQ(queue.getUnprocessedStart(), 12);
     //dequeue and find should be on single thread so this test is valid
 }
 
