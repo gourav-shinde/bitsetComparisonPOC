@@ -390,11 +390,14 @@ public:
             while (marker_.compare_exchange_weak(
                     markerCopy, marker,
                     std::memory_order_release, std::memory_order_relaxed)){
+                    
                     element = queue_[UnprocessedStart(markerCopy)].getData();
                     #ifdef GTEST_FOUND
                         std::cout<<"dequeue success at "<<UnprocessedStart(markerCopy)<<std::endl;
                     #endif
-                    success = true;
+                    if(queue_[UnprocessedStart(markerCopy)].isValid()){//this will make it so the function retrives next element if invalid element is found
+                        success = true;
+                    }
             }
             if(success)
                 return element;
@@ -439,100 +442,73 @@ public:
         return true;
     }
 
+    /// @brief find function return type
+    enum FindStatus {
+        ACTIVE,
+        UNPROCESSED,
+        NOTFOUND
+    };
 
-    /// @brief find the element in queue and return its index, we do recall in this case
-    /// @return returns the index of the element if found else returns -1
-    bool findInActiveZone(T element){
+    ///
+    /// \brief find element in Unified Queue
+    /// \param element
+    /// \return FindStatus
+    ///
+    FindStatus find(T element){
+        
+        FindStatus found=NOTFOUND;
         bool success = false;
-        bool found = 0;
+        //checks first
+
         while(!success){
             if (isEmpty()){
                 //throw message
                 std::cout << "Queue is empty" << std::endl;
-                return false;
+                return NOTFOUND;
             }
-            if(getActiveStart() == getUnprocessedStart()){ 
-                std::cout << "Active Zone is Empty" << std::endl;
-                return false;
-            }
+            
             uint32_t marker = marker_.load(std::memory_order_relaxed);
             uint32_t markerCopy = marker;
-            uint16_t ActiveIndex = ActiveStart(markerCopy);
-            uint16_t UnprocessedStart1 = UnprocessedStart(markerCopy);
-
             
             #ifdef GTEST_FOUND
-                std::cout<<"find called "<<std::endl;
+                std::cout<<"increamentActiveStart called "<<std::endl;
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             #endif
             while (marker_.compare_exchange_weak(
                     markerCopy, marker,
                     std::memory_order_release, std::memory_order_relaxed)){
-
-                    while(ActiveIndex != UnprocessedStart1){
-                        if(queue_[ActiveIndex].getData()== element){
-                            found = true;
+                    
+                    uint16_t ActiveIndex = ActiveStart(markerCopy);
+                    uint16_t UnProcessedIndex = UnprocessedStart(markerCopy);
+                    uint16_t FreeIndex = FreeStart(markerCopy);
+                    #ifdef GTEST_FOUND
+                        std::cout<<"find success at "<<ActiveIndex<<
+                        " "<<UnProcessedIndex<<" "<<FreeIndex<<std::endl;
+                    #endif
+                    while(ActiveIndex != UnProcessedIndex){
+                        
+                        if(queue_[ActiveIndex].getData() == element){
+                            found = ACTIVE; //rollback
                             break;
                         }
                         ActiveIndex = nextIndex(ActiveIndex);
                     }
-                    #ifdef GTEST_FOUND
-                        std::cout<<"find success at "<<std::endl;
-                    #endif
-                    success=true;
-                    break;
-            }
-            
-        }
-        return found;
-    }
-
-
-    /// @brief find the element in queue and return its index, we do recall in this case
-    /// @return returns the index of the element if found else returns -1
-    bool findInUnprocessedZone(T element){
-        bool success = false;
-        bool found = 0;
-        while(!success){
-            if (isEmpty()){
-                //throw message
-                std::cout << "Queue is empty" << std::endl;
-                return false;
-            }
-            if(getActiveStart() == getUnprocessedStart()){ 
-                std::cout << "Active Zone is Empty" << std::endl;
-                return false;
-            }
-            uint32_t marker = marker_.load(std::memory_order_relaxed);
-            uint32_t markerCopy = marker;
-            uint16_t UnProcessedStart1 = UnprocessedStart(markerCopy);
-            uint16_t FreeIndex = FreeStart(markerCopy);
-
-            
-            #ifdef GTEST_FOUND
-                std::cout<<"find called "<<std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            #endif
-            while (marker_.compare_exchange_weak(
-                    markerCopy, marker,
-                    std::memory_order_release, std::memory_order_relaxed)){
-
-                    while(UnProcessedStart1 != FreeIndex){
-                        if(queue_[UnProcessedStart1].getData() == element){
-                            found = true;
+                    while(UnProcessedIndex != FreeIndex && found!=ACTIVE){
+                        
+                        if(queue_[UnProcessedIndex].getData() == element){
+                            found = UNPROCESSED; //Invalidate The element
+                            queue_[UnProcessedIndex].invalidate();
                             break;
                         }
-                        UnProcessedStart1 = nextIndex(UnProcessedStart1);
+                        UnProcessedIndex = nextIndex(UnProcessedIndex);
                     }
-                    #ifdef GTEST_FOUND
-                        std::cout<<"find success at "<<std::endl;
-                    #endif
-                    success=true;
+                    
+                    success = true;
                     break;
-            }  
+            }
         }
         return found;
-        
+
     }
 
 };
