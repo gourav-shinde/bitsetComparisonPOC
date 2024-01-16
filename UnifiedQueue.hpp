@@ -511,4 +511,67 @@ public:
 
     }
 
+    /// @brief This fixes the position of the events
+    /// No Markers change
+    void fixPosition(){
+        bool success = false;
+        uint16_t swap_index_l; // we remember this variable
+        //checks first
+
+        while(!success){
+            //you dont need checks becoz this is called for rollback purposes
+            uint32_t marker = marker_.load(std::memory_order_relaxed);
+            uint32_t markerCopy = marker;
+            
+            #ifdef GTEST_FOUND
+                std::cout<<"Fixposition called "<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            #endif
+            //find index to swap with
+            uint16_t swap_index_r=prevIndex(UnprocessedStart(marker));
+            std::cout<<"swap_index_r before"<<swap_index_r<<std::endl;
+            swap_index_l=swap_index_r;
+            for(swap_index_l;;swap_index_l=prevIndex(swap_index_l)){
+                if(!queue_[swap_index_r].isValid() || compare_(queue_[swap_index_r].getData(),queue_[prevIndex(swap_index_l)].getData())){
+                    continue;
+                }
+                break;
+            }
+            
+            setUnprocessedStartMarker(marker,swap_index_l);
+            std::cout<<"swap_index_l "<<swap_index_l<<" swap_index_r "<<swap_index_r<<std::endl;
+            while (marker_.compare_exchange_weak(
+                    markerCopy, marker,
+                    std::memory_order_release, std::memory_order_relaxed)){
+                    #ifdef GTEST_FOUND
+                        std::cout<<"sort success at "<<std::endl;
+                    #endif
+                    std::swap(queue_[swap_index_l],queue_[swap_index_r]);
+                    success=true;
+                    break;
+            }
+
+            
+        }
+
+    }
+
+    /// @brief returns previous valid unproceesed event
+    /// @return 
+    T getPreviousUnprocessedEvent(){
+        T element;
+        if(getUnprocessedSign())
+            return T();
+        else{
+            //this is called after a dequeue so we need it to go before it
+            uint16_t index=prevIndex(getUnprocessedStart());
+            do{
+                    element=queue_[prevIndex(index)].getData();
+                index=prevIndex(index);
+            }while(!queue_[prevIndex(index)].isValid()); // this can be Infinite if all elements are invalid
+            return element;
+        }
+    }
+
+
 };

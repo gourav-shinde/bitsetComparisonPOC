@@ -484,6 +484,56 @@ TEST(UnifiedQueue, FindTests){
 }
 
 
+TEST(UnfiedQueue, fixPosition){
+    UnifiedQueue<Event, compareEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(8, 8, "a", "b", 1, true));
+    queue.enqueue(Event(10, 10, "a", "b", 1, true));
+
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    compareEvent obj;
+    queue.debug();
+    Event e =queue.dequeue();
+    Event e2 = queue.getPreviousUnprocessedEvent();
+    std::cout<<"e"<<e.receiveTime_<<std::endl;
+    std::cout<<"e2"<<e2.receiveTime_<<std::endl; 
+    if(obj(e,e2)){ //this is rollback
+        std::cout<<"yes"<<std::endl;
+        queue.fixPosition();
+    }
+    queue.debug();
+    queue.increamentActiveStart();
+    queue.increamentActiveStart();// so 3 start
+    queue.find(Event(7, 7, "a", "b", 1, true)); //this will invalidate 7, so 5 will be placed in front of 7
+    Event check = queue.dequeue(); //will return 9
+    EXPECT_EQ(check.receiveTime_, 9);
+    Event e3 =queue.dequeue();
+    Event e4 = queue.getPreviousUnprocessedEvent();
+    std::cout<<"e3"<<e.receiveTime_<<std::endl;
+    std::cout<<"e4"<<e2.receiveTime_<<std::endl; 
+    if(obj(e,e2)){ //this is rollback
+        std::cout<<"yes"<<std::endl;
+        queue.fixPosition();//this should place 6 before 5 becoz
+    }
+    queue.debug();
+
+
+
+}
+
+
 int main(){
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
