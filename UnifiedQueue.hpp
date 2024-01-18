@@ -17,6 +17,18 @@
 // comparator: compare_ function which return A<B
 template <typename T, typename comparator>
 class UnifiedQueue
+/**
+ * @file UnifiedQueue.hpp
+ * @brief This file contains the implementation of the UnifiedQueue class.
+ */
+
+/**
+ * @class UnifiedQueue
+ * @brief A thread-safe queue implementation with unified markers for tracking active, unprocessed, and free elements.
+ *
+ * The UnifiedQueue class provides a thread-safe queue implementation with unified markers for tracking the active, unprocessed, and free elements.
+ * It supports enqueue and dequeue operations, as well as various utility functions for accessing and modifying the queue.
+ */
 {
     class Data{
         public:
@@ -324,7 +336,7 @@ public:
             //run follwing code when running gtest, this adds a delay so threads collide making 
             //compare and swap fail
             #ifdef GTEST_FOUND
-                std::cout<<"called "<<element.receiveTime_<<std::endl;
+                // std::cout<<"called "<<element.receiveTime_<<std::endl;
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             #endif
             
@@ -343,7 +355,7 @@ public:
                 //     queue_[insertPos] = element;
                 // }
                 #ifdef GTEST_FOUND
-                    std::cout<<"Inserted "<<element.receiveTime_<<" at "<<FreeStart(markerCopy)<<std::endl;  
+                   // std::cout<<"Inserted "<<element.receiveTime_<<" at "<<FreeStart(markerCopy)<<std::endl;  
                                 
                 #endif
                 queue_[FreeStart(markerCopy)] = Data(element);
@@ -561,14 +573,14 @@ public:
     T getPreviousUnprocessedEvent(){
         T element;
         if(getUnprocessedSign())
-            return T();
+            return element;
         else{
             //this is called after a dequeue so we need it to go before it
             uint16_t index=prevIndex(getUnprocessedStart());
             do{
                     element=queue_[prevIndex(index)].getData();
                 index=prevIndex(index);
-            }while(!queue_[prevIndex(index)].isValid()); // this can be Infinite if all elements are invalid
+            }while(!queue_[prevIndex(index)].isValid() && prevIndex(getActiveStart())!=prevIndex(index)); // this can be Infinite if all elements are invalid
             return element;
         }
     }

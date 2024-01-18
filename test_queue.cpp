@@ -533,6 +533,16 @@ TEST(UnfiedQueue, fixPosition){
 
 }
 
+TEST(UnifiedQueue, temp){
+    UnifiedQueue<std::shared_ptr<Event>, compareEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(std::make_shared<Event>(1, 1, "a", "b", 1, true));
+    queue.enqueue(std::make_shared<Event>(2, 2, "a", "b", 1, true));
+    queue.enqueue(std::make_shared<Event>(3, 3, "a", "b", 1, true));
+
+    EXPECT_EQ(queue.getPreviousUnprocessedEvent(),nullptr);
+}
+
 
 int main(){
     testing::InitGoogleTest();
