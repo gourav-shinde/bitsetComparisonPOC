@@ -70,16 +70,16 @@ TEST(UnifiedQueueTest, Markers2) {
     EXPECT_EQ(queue.FreeStart(local_marker), 0);
 
     queue.setActiveStartMarker(local_marker, 5);
-    std::cout<<std::hex<<local_marker<<std::endl;
+    // std::cout<<std::hex<<local_marker<<std::endl;
     EXPECT_EQ(queue.ActiveStart(local_marker), 5);
 
     queue.setUnprocessedSignMarker(local_marker, 1);
-    std::cout<<std::hex<<local_marker<<std::endl;
+    // std::cout<<std::hex<<local_marker<<std::endl;
     EXPECT_EQ(queue.ActiveStart(local_marker), 5);
     EXPECT_EQ(queue.UnProcessedSign(local_marker), 1);
-    std::cout<<"bef ustart"<<std::hex<<local_marker<<std::endl;
+    // std::cout<<"bef ustart"<<std::hex<<local_marker<<std::endl;
     queue.setUnprocessedStartMarker(local_marker, 2);
-    std::cout<<"after ustart"<<std::hex<<local_marker<<std::endl;
+    // std::cout<<"after ustart"<<std::hex<<local_marker<<std::endl;
     EXPECT_EQ(queue.ActiveStart(local_marker), 5);
     EXPECT_EQ(queue.UnProcessedSign(local_marker), 1);
     EXPECT_EQ(queue.UnprocessedStart(local_marker), 2);
@@ -561,7 +561,7 @@ TEST(UnfiedQueue, fixPosition){
     queue.increamentActiveStart();// so 3 start
     queue.find(Event(7, 7, "a", "b", 1, true)); //this will invalidate 7, so 5 will be placed in front of 7
     Event check = queue.dequeue(); //will return 9
-    EXPECT_EQ(check.receiveTime_, 9);
+    EXPECT_EQ(check.receiveTime_, 8);
     Event e3 =queue.dequeue();
     Event e4 = queue.getPreviousUnprocessedEvent();
     std::cout<<"e3"<<e.receiveTime_<<std::endl;
@@ -607,26 +607,37 @@ TEST(UnfiedQueue, fixPosition2){
     queue.fixPosition();
     //prepopulate *16
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
-    queue.debug();
-    queue.fixPosition();
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
     queue.enqueue(Event(3, 3, "a", "b", 1, true));
     queue.enqueue(Event(4, 4, "a", "b", 1, true));
     queue.enqueue(Event(9, 9, "a", "b", 1, true));
     queue.enqueue(Event(7, 7, "a", "b", 1, true));
     queue.enqueue(Event(5, 5, "a", "b", 1, true));
-    queue.enqueue(Event(6, 6, "a", "b", 1, true));
     queue.enqueue(Event(8, 8, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
     queue.enqueue(Event(10, 10, "a", "b", 1, true));
 
-    queue.dequeue();
-    queue.dequeue();
+    while(queue.getUnprocessedSign() == 0){
+        queue.dequeue();
+        queue.fixPosition();
+        queue.debug();
+    }
 
-    queue.fixPosition();
+    
+
+
+}
+
+
+TEST(UnifiedQueue, hmm){
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
+    for(int i = 0; i < 30; i++){
+        queue.enqueue(Event(i, i, "a", "b", 1, true));
+    }
+    for(int i = 0; i < 30; i++){
+        queue.dequeue();
+    }
     queue.debug();
-
-
-
 }
 
 

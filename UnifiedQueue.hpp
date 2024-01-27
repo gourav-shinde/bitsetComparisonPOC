@@ -203,10 +203,10 @@ public:
         // else{
         //     std::cout<<"Unprocessed Events Empty"<<std::endl;
         // }
-        // for (auto itr : queue_) {
-        //     std::cout << itr.getData().receiveTime_<< " ";
-        // }
-        // std::cout << std::endl;
+        for (auto itr : queue_) {
+            std::cout << itr.getData().receiveTime_<< " ";
+        }
+        std::cout << std::endl;
          
     }
 
@@ -558,8 +558,6 @@ public:
             return;
         }
         bool success = false;
-        uint16_t swap_index_l; // we remember this variable
-        //checks first
 
         while(!success){
             //you dont need checks becoz this is called for rollback purposes
@@ -571,18 +569,38 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             #endif
             //find index to swap with
+            
+            //get previous valid event from unprocessed start
             uint16_t swap_index_r=prevIndex(UnprocessedStart(marker));
-            std::cout<<"swap_index_r before"<<swap_index_r<<std::endl;
-            swap_index_l=prevIndex(swap_index_r);
-            for(;swap_index_l!=prevIndex(getActiveStart());swap_index_l=prevIndex(swap_index_l)){
-                if(!queue_[swap_index_r].isValid() || compare_(queue_[swap_index_r].getData(),queue_[swap_index_l].getData())){
-                    continue;
-                }
-                break;
+            while(!queue_[swap_index_r].isValid() && swap_index_r!=ActiveStart(marker)){
+                swap_index_r=prevIndex(swap_index_r);
+            }
+
+            if(swap_index_r == ActiveStart(marker)){
+                //throw message
+                return;
             }
             
+            std::cout<<"swap_index_r before"<<swap_index_r<<std::endl;
+            uint16_t swap_index_l=prevIndex(swap_index_r);
+
+            while(!queue_[swap_index_l].isValid() && swap_index_l!=ActiveStart(marker)){
+                swap_index_l=prevIndex(swap_index_l);
+            }
+            
+            
+            if(swap_index_l ==swap_index_r)
+            {
+                //throw message
+                return;
+            }
+            //compare to see if l > r if yes swap
+            if(compare_(queue_[swap_index_l].getData(),queue_[swap_index_r].getData())){
+                return;
+            }
             setUnprocessedStartMarker(marker,swap_index_l);
             std::cout<<"swap_index_l "<<swap_index_l<<" swap_index_r "<<swap_index_r<<std::endl;
+
             while (marker_.compare_exchange_weak(
                     markerCopy, marker,
                     std::memory_order_release, std::memory_order_relaxed)){
