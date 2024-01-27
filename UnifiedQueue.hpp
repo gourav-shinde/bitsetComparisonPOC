@@ -15,7 +15,7 @@
 // and returns true if the first element is smaller than the second
 // T: queue_Type
 // comparator: compare_ function which return A<B
-template <typename T, typename comparator>
+template <typename T, typename comparator, typename negativeCounterPart>
 class UnifiedQueue
 /**
  * @file UnifiedQueue.hpp
@@ -50,8 +50,25 @@ class UnifiedQueue
 private:
     std::vector<Data> queue_;
     // 10 bits activeStart_, 1bit unprocessedSign, 10 bits unprocessedStart_, 1 bit freeSign, 10 bits freeStart_
+    // freeStart bit 0-9,           0x000003FF no shifting needed
+    // freeSign bit 10,             0x00000400
+    // unprocessedStart bit 11-20   0x001FF800  shift by 11
+    // unprocessedSign bit 21       0x00200000
+    // activeStart bit 22-31        0xFFC00000  shift by 22
+    //create variable for shifts too
+
+    //define masks
+    const uint32_t freeStartMask_ = 0x000003FF;
+    const uint32_t freeSignMask_ = 0x00000400;
+    const uint32_t unprocessedStartMask_ = 0x001FF800;
+    const uint32_t unprocessedSignMask_ = 0x00200000;
+    const uint32_t activeStartMask_ = 0xFFC00000;
+    const uint32_t unprocessedStartShift_ = 11;
+    const uint32_t activeStartShift_ = 22;
+
     std::atomic<uint32_t> marker_; //test with this datatype
     comparator compare_; //currently not  used, as we are not sorting anymore
+    negativeCounterPart negativeCounterPart_; //used to find negative counterpart
     
 public:
     UnifiedQueue(uint16_t capacity=1024){
@@ -64,61 +81,62 @@ public:
     }
 
     bool getUnprocessedSign(){
-        return (marker_.load(std::memory_order_relaxed) & 0x80000000) >> 31;
+        return (marker_.load(std::memory_order_relaxed) & unprocessedSignMask_) ? true : false;
     }
 
     bool getFreeSign(){
-        return (marker_.load(std::memory_order_relaxed) & 0x40000000) >> 30;
+        return (marker_.load(std::memory_order_relaxed) &  freeSignMask_) ? true : false;
     }
 
     //getActiveStart
     uint32_t getActiveStart(){
-        return (marker_.load(std::memory_order_relaxed) & 0x3FFC0000) >> 18;
+        return (marker_.load(std::memory_order_relaxed) & activeStartMask_) >> activeStartShift_;
     }
 
     //getUnprocessedStart
     uint32_t getUnprocessedStart(){
-        return (marker_.load(std::memory_order_relaxed) & 0x0003FFC0) >> 6;
+        return (marker_.load(std::memory_order_relaxed) & unprocessedStartMask_) >> unprocessedStartShift_;
     }
 
     //getFreeStart
     uint32_t getFreeStart(){
-        return (marker_.load(std::memory_order_relaxed) & 0x0000003F);
+        return (marker_.load(std::memory_order_relaxed) & freeStartMask_);
     }
 
-    //setfreeSign
+    //setfreeSign 
     void setFreeSign(bool sign){
+        //set 10th bit to sign
         if(sign){
-            marker_ |= 0x40000000;
+            marker_ |= freeSignMask_;
         }else{
-            marker_ &= 0xBFFFFFFF;
+            marker_ &= ~freeSignMask_;
         }
     }
 
     //setunprocessedSign
     void setUnprocessedSign(bool sign){
         if(sign){
-            marker_ |= 0x80000000;
+            marker_ |= unprocessedSignMask_;
         }else{
-            marker_ &= 0x7FFFFFFF;
+            marker_ &= ~unprocessedSignMask_;
         }
     }
 
     //setActiveStart
     void setActiveStart(uint32_t start){
-        marker_ &= 0xC003FFFF;
-        marker_ |= (start << 18);
+        marker_ &= ~activeStartMask_;
+        marker_ |= (start << activeStartShift_);
     }
 
     //setUnprocessedStart
     void setUnprocessedStart(uint32_t start){
-        marker_ &= 0xFFFFC03F;
-        marker_ |= (start << 6);
+        marker_ &= ~unprocessedStartMask_;
+        marker_ |= (start << unprocessedStartShift_);
     }
 
     //setFreeStart
     void setFreeStart(uint32_t start){
-        marker_ &= 0xFFFFFFC0;
+        marker_ &= ~freeStartMask_;
         marker_ |= start;
     }
 
@@ -165,6 +183,8 @@ public:
     }
 
     void debug(){
+        //print marker_ in hexcode
+        // std::cout << "marker_: " << std::hex << marker_.load(std::memory_order_relaxed) << std::endl;
         std::cout << "activeStart: " << getActiveStart();
         std::cout << " unprocessedSign: " << getUnprocessedSign();
         std::cout << " unprocessedStart: " << getUnprocessedStart();
@@ -172,82 +192,83 @@ public:
         std::cout << " freeStart: " << getFreeStart();
         std::cout << " size: " << size() << std::endl;
 
-        int i = getUnprocessedStart();
-        if(!getUnprocessedSign()){
-        do {
-            std::cout << queue_[i].getData().receiveTime_ << " ";
-            i = nextIndex(i);
-        } while (i != getFreeStart());
-        std::cout << std::endl;
-        }
-        else{
-            std::cout<<"Unprocessed Events Empty"<<std::endl;
-        }
-        for (auto itr : queue_) {
-            std::cout << itr.getData().receiveTime_ << " ";
-        }
-        std::cout << std::endl;
+        // int i = getUnprocessedStart();
+        // if(!getUnprocessedSign()){
+        // do {
+        //     std::cout << queue_[i].getData().receiveTime_ << " ";
+        //     i = nextIndex(i);
+        // } while (i != getFreeStart());
+        // std::cout << std::endl;
+        // }
+        // else{
+        //     std::cout<<"Unprocessed Events Empty"<<std::endl;
+        // }
+        // for (auto itr : queue_) {
+        //     std::cout << itr.getData().receiveTime_<< " ";
+        // }
+        // std::cout << std::endl;
          
     }
 
     //getValues from Marker
     
     uint32_t ActiveStart(uint32_t marker){
-        return (marker & 0x3FFC0000) >> 18;
+        uint32_t activeStart = (marker & activeStartMask_) >> activeStartShift_;
+        return activeStart;
     }
 
     bool UnProcessedSign(uint32_t marker){
-        return (marker & 0x80000000) >> 31;
+        return (marker & unprocessedSignMask_) ? true : false;
     }
 
     bool FreeSign(uint32_t marker){
-        return (marker & 0x40000000) >> 30;
+        return (marker & freeSignMask_) ? true : false;
     }
 
     uint32_t UnprocessedStart(uint32_t marker){
-        return (marker & 0x0003FFC0) >> 6;
+        return (marker & unprocessedStartMask_) >> unprocessedStartShift_;
     }
 
     uint32_t FreeStart(uint32_t marker){
-        return (marker & 0x0000003F);
+        return (marker & freeStartMask_);
     }
 
     //setValues for Marker
 
     //setFreeStart
     void setFreeStartMarker(uint32_t &marker, uint32_t start){
-        marker &= 0xFFFFFFC0;
+        marker &= ~freeStartMask_;
         marker |= start;
     }
 
     //setfreeSign
     void setFreeSignMarker(uint32_t &marker, bool sign){
         if(sign){
-            marker |= 0x40000000;
+            marker |= freeSignMask_;
         }else{
-            marker &= 0xBFFFFFFF;
+            marker &= ~freeSignMask_;
         }
     }
 
     //setunprocessedSign
     void setUnprocessedSignMarker(uint32_t &marker, bool sign){
         if(sign){
-            marker |= 0x80000000;
+            marker |= unprocessedSignMask_;
         }else{
-            marker &= 0x7FFFFFFF;
+            marker &= ~unprocessedSignMask_;
         }
     }
 
     //setActiveStart
     void setActiveStartMarker(uint32_t &marker, uint32_t start){
-        marker &= 0xC003FFFF;
-        marker |= (start << 18);
+        marker &= ~activeStartMask_;
+        marker |= (start << activeStartShift_);
     }
 
     //setUnprocessedStart
     void setUnprocessedStartMarker(uint32_t &marker, uint32_t start){
-        marker &= 0xFFFFC03F;
-        marker |= (start << 6);
+        marker &= ~unprocessedStartMask_;
+        marker |= (start << unprocessedStartShift_);
     }
 
     // main functions
@@ -419,7 +440,14 @@ public:
         
     }
 
+    T getValue(uint32_t index){
+        if(queue_[index].isValid())
+            return queue_[index].getData();
+        return nullptr;
+    }
+
     /// @brief fossil collect dummy function
+    /// TODO pass a count to jump to
     bool increamentActiveStart(){
         bool success = false;
         //checks first
@@ -526,6 +554,9 @@ public:
     /// @brief This fixes the position of the events
     /// No Markers change
     void fixPosition(){
+        if(getActiveStart() == getUnprocessedStart()){//active zone is empty
+            return;
+        }
         bool success = false;
         uint16_t swap_index_l; // we remember this variable
         //checks first
@@ -542,9 +573,9 @@ public:
             //find index to swap with
             uint16_t swap_index_r=prevIndex(UnprocessedStart(marker));
             std::cout<<"swap_index_r before"<<swap_index_r<<std::endl;
-            swap_index_l=swap_index_r;
-            for(swap_index_l;;swap_index_l=prevIndex(swap_index_l)){
-                if(!queue_[swap_index_r].isValid() || compare_(queue_[swap_index_r].getData(),queue_[prevIndex(swap_index_l)].getData())){
+            swap_index_l=prevIndex(swap_index_r);
+            for(;swap_index_l!=prevIndex(getActiveStart());swap_index_l=prevIndex(swap_index_l)){
+                if(!queue_[swap_index_r].isValid() || compare_(queue_[swap_index_r].getData(),queue_[swap_index_l].getData())){
                     continue;
                 }
                 break;
@@ -583,6 +614,69 @@ public:
             }while(!queue_[prevIndex(index)].isValid() && prevIndex(getActiveStart())!=prevIndex(index)); // this can be Infinite if all elements are invalid
             return element;
         }
+    }
+
+    /// need a -ve comparator
+    /// @brief called when we process a -ve event
+    /// @param element
+    /// @return TriStatus
+    FindStatus negativeFind(T element){
+        //assuming the negative counterpart is already processed by now
+        FindStatus found=NOTFOUND;
+        bool success = false;
+        //checks first
+
+        while(!success){
+            if (isEmpty()){
+                //throw message
+                std::cout << "Queue is empty" << std::endl;
+                return NOTFOUND;
+            }
+            
+            uint32_t marker = marker_.load(std::memory_order_relaxed);
+            uint32_t markerCopy = marker;
+            
+            #ifdef GTEST_FOUND
+                std::cout<<"increamentActiveStart called "<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            #endif
+            while (marker_.compare_exchange_weak(
+                    markerCopy, marker,
+                    std::memory_order_release, std::memory_order_relaxed)){
+                    
+                    uint16_t ActiveIndex = ActiveStart(markerCopy);
+                    uint16_t UnProcessedIndex = UnprocessedStart(markerCopy);
+                    uint16_t FreeIndex = FreeStart(markerCopy);
+                    #ifdef GTEST_FOUND
+                        std::cout<<"find success at "<<ActiveIndex<<
+                        " "<<UnProcessedIndex<<" "<<FreeIndex<<std::endl;
+                    #endif
+                    while(ActiveIndex != UnProcessedIndex){
+                        
+                        if(this->negativeCounterPart_(queue_[ActiveIndex].getData(), element)){
+                            found = ACTIVE; //rollback
+                            
+                            break;
+                        }
+                        ActiveIndex = nextIndex(ActiveIndex);
+                    }
+                    while(UnProcessedIndex != FreeIndex && found!=ACTIVE){
+                        
+                        if(this->negativeCounterPart_(queue_[UnProcessedIndex].getData(), element)){
+                            found = UNPROCESSED; //Invalidate The element
+                            
+                            queue_[UnProcessedIndex].invalidate();
+                            break;
+                        }
+                        UnProcessedIndex = nextIndex(UnProcessedIndex);
+                    }
+                    
+                    success = true;
+                    break;
+            }
+        }
+        return found;
+
     }
 
 

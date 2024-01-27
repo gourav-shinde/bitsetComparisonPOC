@@ -10,38 +10,76 @@
 RandomEventGenerator r;
 // test for isEmpty
 TEST(UnifiedQueueTest, Markers) {
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     //init condition check
     EXPECT_EQ(queue.getActiveStart(), 0);
     EXPECT_EQ(queue.getUnprocessedStart(), 0);
     EXPECT_EQ(queue.getFreeStart(), 0);
     EXPECT_EQ(queue.getFreeSign(), 0);
     EXPECT_EQ(queue.getUnprocessedSign(), 0);
+    queue.debug();
     //set testing
-    queue.setActiveStart(5);
-    queue.setUnprocessedStart(2);
+    queue.setActiveStart(3);
+    queue.setUnprocessedStart(3);
     queue.setFreeStart(3);
-    EXPECT_EQ(queue.getActiveStart(), 5);
-    EXPECT_EQ(queue.getUnprocessedStart(), 2);
+    EXPECT_EQ(queue.getActiveStart(), 3);
+    EXPECT_EQ(queue.getUnprocessedStart(), 3);
     EXPECT_EQ(queue.getFreeStart(), 3);
+    queue.debug();
     //set sign
     queue.setFreeSign(1);
     queue.setUnprocessedSign(1);
     EXPECT_EQ(queue.getFreeSign(), 1);
     EXPECT_EQ(queue.getUnprocessedSign(), 1);
+    EXPECT_EQ(queue.getActiveStart(), 3);
+    EXPECT_EQ(queue.getUnprocessedStart(), 3);
+    EXPECT_EQ(queue.getFreeStart(), 3);
+    queue.debug();
+    //set values
+    //set testing
+    queue.setActiveStart(15);
+    queue.setUnprocessedStart(15);
+    queue.setFreeStart(15);
+    EXPECT_EQ(queue.getActiveStart(), 15);
+    EXPECT_EQ(queue.getUnprocessedStart(), 15);
+    EXPECT_EQ(queue.getFreeStart(), 15);
+    EXPECT_EQ(queue.getFreeSign(), 1);
+    EXPECT_EQ(queue.getUnprocessedSign(), 1);
+    queue.debug();
+    //set sign
+    queue.setFreeSign(0);
+    queue.setUnprocessedSign(0);
+    EXPECT_EQ(queue.getFreeSign(), 0);
+    EXPECT_EQ(queue.getUnprocessedSign(), 0);
+    EXPECT_EQ(queue.getActiveStart(), 15);
+    EXPECT_EQ(queue.getUnprocessedStart(), 15);
+    EXPECT_EQ(queue.getFreeStart(), 15);
+    queue.debug();
 
 }
 
-//tests for local markers modifier
+// tests for local markers modifier
 TEST(UnifiedQueueTest, Markers2) {
-    UnifiedQueue<Event, compareEvent> queue(10);
-    uint32_t local_marker = 0;
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
+    uint32_t local_marker = 0; 
+    //Init check
+    EXPECT_EQ(queue.ActiveStart(local_marker), 0);
+    EXPECT_EQ(queue.UnProcessedSign(local_marker), 0);
+    EXPECT_EQ(queue.UnprocessedStart(local_marker), 0);
+    EXPECT_EQ(queue.FreeSign(local_marker), 0);
+    EXPECT_EQ(queue.FreeStart(local_marker), 0);
+
     queue.setActiveStartMarker(local_marker, 5);
+    std::cout<<std::hex<<local_marker<<std::endl;
     EXPECT_EQ(queue.ActiveStart(local_marker), 5);
+
     queue.setUnprocessedSignMarker(local_marker, 1);
+    std::cout<<std::hex<<local_marker<<std::endl;
     EXPECT_EQ(queue.ActiveStart(local_marker), 5);
     EXPECT_EQ(queue.UnProcessedSign(local_marker), 1);
+    std::cout<<"bef ustart"<<std::hex<<local_marker<<std::endl;
     queue.setUnprocessedStartMarker(local_marker, 2);
+    std::cout<<"after ustart"<<std::hex<<local_marker<<std::endl;
     EXPECT_EQ(queue.ActiveStart(local_marker), 5);
     EXPECT_EQ(queue.UnProcessedSign(local_marker), 1);
     EXPECT_EQ(queue.UnprocessedStart(local_marker), 2);
@@ -60,7 +98,7 @@ TEST(UnifiedQueueTest, Markers2) {
 }
 
 TEST(UnifiedQueueTest, isEmptyTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     queue.debug();
     EXPECT_EQ(queue.isEmpty(), true);
     queue.enqueue(r.getEvent());
@@ -77,7 +115,7 @@ TEST(UnifiedQueueTest, isEmptyTest) {
 
 // test for isFull
 TEST(UnifiedQueueTest, isFullTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     EXPECT_EQ(queue.isFull(), false);
     for(int i = 0; i < 10; i++){
         queue.enqueue(r.getEvent());
@@ -87,13 +125,13 @@ TEST(UnifiedQueueTest, isFullTest) {
 
 // test for capacity
 TEST(UnifiedQueueTest, capacityTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     EXPECT_EQ(queue.capacity(), 10);
 }
 
 // test for size
 TEST(UnifiedQueueTest, sizeTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     EXPECT_EQ(queue.size(), 0);
     queue.enqueue(r.getEvent());
     queue.enqueue(r.getEvent());
@@ -102,7 +140,7 @@ TEST(UnifiedQueueTest, sizeTest) {
 
 // test for enqueue and dequeue
 TEST(UnifiedQueueTest, enqueueTest) {
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     Event e1 = r.getEvent();
     Event e2 = r.getEvent();
     queue.enqueue(e1);
@@ -113,7 +151,7 @@ TEST(UnifiedQueueTest, enqueueTest) {
 
 // test for findInsertPosition
 // TEST(UnifiedQueueTest, PositionTest){
-//     UnifiedQueue<Event, compareEvent> queue(10);
+//     UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
 //     int pos = queue.findInsertPosition(Event (1, 1, "a", "b", 1, true),queue.getActiveStart(),queue.getFreeStart());
 //     EXPECT_EQ(pos, 0);
 //     queue.enqueue(Event(1, 1, "a", "b", 1, true));
@@ -151,7 +189,7 @@ TEST(UnifiedQueueTest, enqueueTest) {
 
 //not on zero
 TEST(UnifiedQueueTest, SizeTest){
-    UnifiedQueue<Event, compareEvent> queue(4);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(4);
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(3, 3, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
@@ -191,7 +229,7 @@ TEST(UnifiedQueueTest, SizeTest){
 
 
 // TESTING ABA
-void enqueue(UnifiedQueue<Event, compareEvent> *queue){
+void enqueue(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     sleep(1);
     queue->enqueue(Event(1, 1, "a", "b", 1, true));
     queue->enqueue(Event(2, 2, "a", "b", 1, true));
@@ -201,7 +239,7 @@ void enqueue(UnifiedQueue<Event, compareEvent> *queue){
 
 }
 
-void enqueue2(UnifiedQueue<Event, compareEvent> *queue){
+void enqueue2(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     queue->enqueue(Event(10, 10, "a", "b", 1, true));
     // queue->dequeue();
     sleep(1);
@@ -213,7 +251,7 @@ void enqueue2(UnifiedQueue<Event, compareEvent> *queue){
 }
 
 TEST(UnifiedQueueTest, ABA1){
-    UnifiedQueue<Event, compareEvent> queue(10);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(10);
     queue.enqueue(Event(12, 12, "a", "b", 1, true)); //prepopulate
     std::thread t1(enqueue, &queue);
     std::thread t2(enqueue2, &queue);
@@ -223,7 +261,7 @@ TEST(UnifiedQueueTest, ABA1){
     EXPECT_EQ(queue.size(), 10);
 }
 
-void dequeue(UnifiedQueue<Event, compareEvent> *queue){
+void dequeue(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     sleep(1);
     queue->dequeue();
     queue->dequeue();
@@ -232,7 +270,7 @@ void dequeue(UnifiedQueue<Event, compareEvent> *queue){
     queue->dequeue();
 }
 
-void dequeue2(UnifiedQueue<Event, compareEvent> *queue){
+void dequeue2(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     queue->dequeue();
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     queue->dequeue();
@@ -244,7 +282,7 @@ void dequeue2(UnifiedQueue<Event, compareEvent> *queue){
 
 
 TEST(UnifiedQueueTest, ABA2){
-    UnifiedQueue<Event, compareEvent> queue(30);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
     //prepopulate
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
@@ -274,7 +312,7 @@ TEST(UnifiedQueueTest, ABA2){
     EXPECT_EQ(queue.getFreeStart(), 20);
 }
 
-void fossil(UnifiedQueue<Event, compareEvent> *queue){
+void fossil(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     sleep(1);
     queue->increamentActiveStart();
     queue->increamentActiveStart();
@@ -283,7 +321,7 @@ void fossil(UnifiedQueue<Event, compareEvent> *queue){
     queue->increamentActiveStart();
 }
 
-void fossil2(UnifiedQueue<Event, compareEvent> *queue){
+void fossil2(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     queue->increamentActiveStart();
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     queue->increamentActiveStart();
@@ -293,7 +331,7 @@ void fossil2(UnifiedQueue<Event, compareEvent> *queue){
 }
 
 TEST(UnifiedQueue,ABA3){
-    UnifiedQueue<Event, compareEvent> queue(30);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
     //prepopulate *16
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
@@ -336,7 +374,7 @@ TEST(UnifiedQueue,ABA3){
 }
 
 TEST(UnifiedQueue,ThreadTest){
-    UnifiedQueue<Event, compareEvent> queue(30);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
     //prepopulate *16
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
@@ -399,7 +437,7 @@ TEST(UnifiedQueue,ThreadTest){
 }
 
 
-void enqueue3(UnifiedQueue<Event, compareEvent> *queue){
+void enqueue3(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     queue->enqueue(Event(11, 11, "a", "b", 1, true));
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     queue->enqueue(Event(12, 12, "a", "b", 1, true));
@@ -411,7 +449,7 @@ void enqueue3(UnifiedQueue<Event, compareEvent> *queue){
 
 
 }
-void dequeue3(UnifiedQueue<Event, compareEvent> *queue){
+void dequeue3(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     queue->dequeue();
     // std::this_thread::sleep_for(std::chrono::milliseconds(50));
     queue->dequeue();
@@ -428,7 +466,7 @@ void dequeue3(UnifiedQueue<Event, compareEvent> *queue){
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
 
-void Find(UnifiedQueue<Event, compareEvent> *queue){
+void Find(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     EXPECT_EQ(queue->find(Event(3, 3, "a", "b", 1, true)), queue->FindStatus::ACTIVE);
     queue->debug();
@@ -442,13 +480,13 @@ void Find(UnifiedQueue<Event, compareEvent> *queue){
 
 }
 
-void fossile3(UnifiedQueue<Event, compareEvent> *queue){
+void fossile3(UnifiedQueue<Event, compareEvent, compareNegativeEvent> *queue){
     queue->increamentActiveStart();
 }
 
 
 TEST(UnifiedQueue, FindTests){
-    UnifiedQueue<Event, compareEvent> queue(30);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
     //prepopulate *16
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
@@ -485,9 +523,11 @@ TEST(UnifiedQueue, FindTests){
 
 
 TEST(UnfiedQueue, fixPosition){
-    UnifiedQueue<Event, compareEvent> queue(30);
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
+    // queue.fixPosition();
     //prepopulate *16
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    // queue.fixPosition();
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
     queue.enqueue(Event(3, 3, "a", "b", 1, true));
     queue.enqueue(Event(4, 4, "a", "b", 1, true));
@@ -498,6 +538,9 @@ TEST(UnfiedQueue, fixPosition){
     queue.enqueue(Event(8, 8, "a", "b", 1, true));
     queue.enqueue(Event(10, 10, "a", "b", 1, true));
 
+    queue.dequeue();
+    queue.fixPosition();
+    queue.dequeue();
     queue.dequeue();
     queue.dequeue();
     queue.dequeue();
@@ -534,7 +577,7 @@ TEST(UnfiedQueue, fixPosition){
 }
 
 TEST(UnifiedQueue, temp){
-    UnifiedQueue<std::shared_ptr<Event>, compareEvent> queue(30);
+    UnifiedQueue<std::shared_ptr<Event>, compareEvent, compareNegativeEvent> queue(30);
     //prepopulate *16
     queue.enqueue(std::make_shared<Event>(1, 1, "a", "b", 1, true));
     queue.enqueue(std::make_shared<Event>(2, 2, "a", "b", 1, true));
@@ -542,6 +585,51 @@ TEST(UnifiedQueue, temp){
 
     EXPECT_EQ(queue.getPreviousUnprocessedEvent(),nullptr);
 }
+
+TEST(UnifiedQueue,NegativeEvent){
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+
+    EXPECT_EQ(queue.negativeFind(Event(9, 9, "a", "b", 1, false)), queue.FindStatus::UNPROCESSED);
+}
+
+
+TEST(UnfiedQueue, fixPosition2){
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
+    queue.fixPosition();
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.debug();
+    queue.fixPosition();
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.enqueue(Event(6, 6, "a", "b", 1, true));
+    queue.enqueue(Event(8, 8, "a", "b", 1, true));
+    queue.enqueue(Event(10, 10, "a", "b", 1, true));
+
+    queue.dequeue();
+    queue.dequeue();
+
+    queue.fixPosition();
+    queue.debug();
+
+
+
+}
+
+
 
 
 int main(){
@@ -611,4 +699,17 @@ int main(){
 // 21-2
 // 2-2-2 queue is full and full of processed.
 
+// EventSet Logic
+// when u scanning for +ve counterpart in queue, if find status is not found, crash the code.
 
+
+//unifed queue
+// write a -ve counterpart API
+// becoz the EVENT_TYPE CHANGES IN _VE EVENT.
+//find works only for staggler.
+
+//EventSet
+//add a comparator to check if the data is negative counterpart. 
+// check if event is -ve of not
+//  -ve negative part
+//  +ve insert

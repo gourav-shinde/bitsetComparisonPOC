@@ -58,6 +58,30 @@ public:
 };
 
 
+struct compareNegativeEvent {
+public:
+    bool operator() (const Event& first,
+                     const Event& second) const {
+        // std::cout<<"comparecalled"<<std::endl;  
+        // std::cout<<"first.receiveTime_ "<<first.receiveTime_<<std::endl;
+        // std::cout<<"second.receiveTime_ "<<second.receiveTime_<<std::endl;
+        // std::cout<<"first.sendTime_ "<<first.sendTime_<<std::endl;
+        // std::cout<<"second.sendTime_ "<<second.sendTime_<<std::endl;
+        // std::cout<<"first.sendName_ "<<first.sendName_<<std::endl;
+        // std::cout<<"second.sendName_ "<<second.sendName_<<std::endl;
+        // std::cout<<"first.generation_ "<<first.generation_<<std::endl;
+        // std::cout<<"second.generation_ "<<second.generation_<<std::endl;
+        // std::cout<<"first.Event2Type_ "<<first.Event2Type_<<std::endl;
+        return ((first.receiveTime_ == second.receiveTime_)
+                && (first.sendTime_ == second.sendTime_)
+                && (first.sendName_ == second.sendName_)
+                && (first.generation_ == second.generation_)
+                && (first.Event2Type_ == true));
+    }
+};
+
+
+
 
 
  
