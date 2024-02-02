@@ -608,8 +608,8 @@ TEST(UnfiedQueue, fixPosition2){
     //prepopulate *16
     queue.enqueue(Event(1, 1, "a", "b", 1, true));
     queue.enqueue(Event(2, 2, "a", "b", 1, true));
-    queue.enqueue(Event(3, 3, "a", "b", 1, true));
     queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
     queue.enqueue(Event(9, 9, "a", "b", 1, true));
     queue.enqueue(Event(7, 7, "a", "b", 1, true));
     queue.enqueue(Event(5, 5, "a", "b", 1, true));
@@ -622,10 +622,6 @@ TEST(UnfiedQueue, fixPosition2){
         queue.fixPosition();
         queue.debug();
     }
-
-    
-
-
 }
 
 
@@ -638,6 +634,36 @@ TEST(UnifiedQueue, hmm){
         queue.dequeue();
     }
     queue.debug();
+}
+
+// TEST(UnifiedQueue,fullup){
+//     UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(1024);
+//     for(int i = 0; i < 1023; i++){
+//         queue.enqueue(Event(i, i, "a", "b", 1, true));
+//     }
+//     queue.debug();
+// }
+
+TEST(UnifiedQueue, testagain){
+    UnifiedQueue<Event, compareEvent, compareNegativeEvent> queue(30);
+    //prepopulate *16
+    queue.enqueue(Event(1, 1, "a", "b", 1, true));
+    queue.enqueue(Event(2, 2, "a", "b", 1, true));
+    queue.enqueue(Event(3, 3, "a", "b", 1, true));
+    queue.enqueue(Event(4, 4, "a", "b", 1, true));
+    queue.enqueue(Event(9, 9, "a", "b", 1, true));
+    queue.enqueue(Event(7, 7, "a", "b", 1, true));
+    queue.enqueue(Event(5, 5, "a", "b", 1, true));
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    queue.dequeue();
+    //oh no we get a staggler
+    queue.fixPosition();
+    queue.debug();
+    EXPECT_EQ(queue.getUnprocessedStart(), 4);
 }
 
 
